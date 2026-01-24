@@ -94,11 +94,13 @@ location: "Berlin"
 - [Workflow](doc/workflow.en.md) - Complete workflow guide
 - [Configuration](doc/configuration.en.md) - All settings explained
 - [Script Reference](doc/scripts.en.md) - Detailed options for all scripts
+- [Examples](doc/examples.en.md) - Complete workflow examples
 
 German documentation:
 - [Workflow (DE)](doc/workflow.de.md)
 - [Konfiguration (DE)](doc/configuration.de.md)
 - [Script-Referenz (DE)](doc/scripts.de.md)
+- [Beispiele (DE)](doc/examples.de.md)
 
 ## Contributing with AI
 

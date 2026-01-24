@@ -77,5 +77,5 @@ clean:
 
 lint:
 	@echo "Running ShellCheck..."
-	shellcheck bin/pg-* lib/*.sh setup.sh
+	shellcheck bin/pg-* lib/*.sh setup.sh examples/*.sh
 	@echo "All scripts passed ShellCheck validation."

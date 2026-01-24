@@ -94,11 +94,13 @@ location: "Berlin"
 - [Workflow](doc/workflow.de.md) - Vollständiger Arbeitsablauf
 - [Konfiguration](doc/configuration.de.md) - Alle Einstellungen erklärt
 - [Script-Referenz](doc/scripts.de.md) - Detaillierte Optionen aller Scripts
+- [Beispiele](doc/examples.de.md) - Vollständige Workflow-Beispiele
 
 Englische Dokumentation:
 - [Workflow (EN)](doc/workflow.en.md)
 - [Configuration (EN)](doc/configuration.en.md)
 - [Script Reference (EN)](doc/scripts.en.md)
+- [Examples (EN)](doc/examples.en.md)
 
 ## Beitragen mit KI
 
