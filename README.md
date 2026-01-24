@@ -13,6 +13,18 @@ Modular CLI toolset for automating photo workflows.
 - RAW development to JPG (darktable-cli or ImageMagick)
 - Integrity verification with checksums
 
+## Requirements
+
+| Component | Minimum Version | Notes |
+|-----------|-----------------|-------|
+| **Bash** | 3.2+ | macOS default is 3.2.57 |
+| **Python** | 3.9+ | macOS 12+ includes 3.9 |
+| **exiftool** | - | Required for metadata |
+| **darktable** | - | Optional, for RAW development |
+| **ImageMagick** | - | Optional, for image processing |
+
+The setup script checks these versions automatically.
+
 ## Installation
 
 ```bash

@@ -6,7 +6,11 @@ alwaysApply: false
 
 # Bash 3.2 Compatibility
 
-macOS ships with Bash 3.2 by default. All scripts must be compatible.
+**Minimum Version: Bash 3.2**
+
+macOS ships with Bash 3.2 by default. All scripts must be compatible with Bash 3.2.57 or newer.
+
+The `setup.sh` script verifies this version requirement automatically.
 
 ## Forbidden Features (Bash 4.0+)
 

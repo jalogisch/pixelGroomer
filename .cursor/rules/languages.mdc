@@ -10,6 +10,15 @@ This project uses only two languages:
 1. **Bash** - For scripts and orchestration
 2. **Python** - For complex logic (EXIF, YAML parsing, JSON handling)
 
+## Version Requirements
+
+| Language | Minimum Version | Reason |
+|----------|-----------------|--------|
+| **Bash** | 3.2+ | macOS default shell |
+| **Python** | 3.9+ | Type hints, `pathlib`, `f-strings` |
+
+These versions are checked by `setup.sh` during installation.
+
 ## Bash Requirements
 
 - All scripts in `bin/` and `lib/` are Bash
@@ -17,6 +26,8 @@ This project uses only two languages:
 - Must pass ShellCheck validation (see `shellcheck.mdc`)
 
 ## Python Requirements
+
+**Minimum Version: Python 3.9**
 
 **Python must always run inside the project's virtual environment.**
 

@@ -28,19 +28,53 @@ echo "║       PixelGroomer Setup              ║"
 echo "╚═══════════════════════════════════════╝"
 echo ""
 
+# Minimum required versions
+MIN_PYTHON_MAJOR=3
+MIN_PYTHON_MINOR=9
+MIN_BASH_MAJOR=3
+MIN_BASH_MINOR=2
+
+# Check Bash version
+log_info "Checking Bash version..."
+BASH_MAJOR="${BASH_VERSINFO[0]}"
+BASH_MINOR="${BASH_VERSINFO[1]}"
+
+if [[ "$BASH_MAJOR" -lt "$MIN_BASH_MAJOR" ]] || \
+   [[ "$BASH_MAJOR" -eq "$MIN_BASH_MAJOR" && "$BASH_MINOR" -lt "$MIN_BASH_MINOR" ]]; then
+    log_error "Bash ${MIN_BASH_MAJOR}.${MIN_BASH_MINOR}+ required, found ${BASH_MAJOR}.${BASH_MINOR}"
+    echo ""
+    echo "Please upgrade Bash:"
+    echo "  macOS:  brew install bash"
+    echo "  Ubuntu: sudo apt install bash"
+    exit 1
+fi
+log_success "Bash ${BASH_MAJOR}.${BASH_MINOR} found (>= ${MIN_BASH_MAJOR}.${MIN_BASH_MINOR} required)"
+
 # Check Python 3
-log_info "Checking Python 3..."
+log_info "Checking Python version..."
 if ! command -v python3 &>/dev/null; then
     log_error "Python 3 not found!"
     echo ""
-    echo "Please install Python 3:"
+    echo "Please install Python ${MIN_PYTHON_MAJOR}.${MIN_PYTHON_MINOR}+:"
     echo "  macOS:  brew install python3"
     echo "  Ubuntu: sudo apt install python3 python3-venv"
     exit 1
 fi
 
 PYTHON_VERSION=$(python3 --version 2>&1 | cut -d' ' -f2)
-log_success "Python $PYTHON_VERSION found"
+PYTHON_MAJOR=$(echo "$PYTHON_VERSION" | cut -d. -f1)
+PYTHON_MINOR=$(echo "$PYTHON_VERSION" | cut -d. -f2)
+
+if [[ "$PYTHON_MAJOR" -lt "$MIN_PYTHON_MAJOR" ]] || \
+   [[ "$PYTHON_MAJOR" -eq "$MIN_PYTHON_MAJOR" && "$PYTHON_MINOR" -lt "$MIN_PYTHON_MINOR" ]]; then
+    log_error "Python ${MIN_PYTHON_MAJOR}.${MIN_PYTHON_MINOR}+ required, found ${PYTHON_VERSION}"
+    echo ""
+    echo "Please upgrade Python:"
+    echo "  macOS:  brew install python@3.12"
+    echo "  Ubuntu: sudo apt install python3.12 python3.12-venv"
+    exit 1
+fi
+log_success "Python $PYTHON_VERSION found (>= ${MIN_PYTHON_MAJOR}.${MIN_PYTHON_MINOR} required)"
 
 # Check for venv module
 log_info "Checking venv module..."

@@ -1,0 +1,42 @@
+# PixelGroomer Project Configuration
+# This file defines the minimum Python version required
+
+[project]
+name = "pixelgroomer"
+version = "0.1.0"
+description = "Modular CLI toolset for automating photo workflows"
+readme = "README.md"
+license = {text = "Unlicense"}
+requires-python = ">=3.9"
+keywords = ["photo", "workflow", "exif", "darktable", "album"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: The Unlicense (Unlicense)",
+    "Operating System :: MacOS",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Multimedia :: Graphics",
+]
+
+[project.urls]
+Repository = "https://github.com/yourusername/pixelGroomer"
+
+[tool.black]
+line-length = 100
+target-version = ["py39"]
+
+[tool.isort]
+profile = "black"
+line_length = 100
+
+[tool.mypy]
+python_version = "3.9"
+warn_return_any = true
+warn_unused_configs = true

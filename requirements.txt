@@ -1,2 +1,3 @@
 # PixelGroomer Python Dependencies
+# Requires Python >= 3.9
 PyYAML>=6.0
