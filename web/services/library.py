@@ -1,9 +1,11 @@
 """Photo library service."""
+from __future__ import annotations
+
 import json
 import os
 from datetime import datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 
 from PIL import Image
 
@@ -65,7 +67,7 @@ class LibraryService:
         
         return photos
     
-    def get_photo_info(self, photo_path: str) -> dict | None:
+    def get_photo_info(self, photo_path: str) -> Optional[dict]:
         """Get information about a photo."""
         full_path = self.library_path / photo_path
         
@@ -105,7 +107,7 @@ class LibraryService:
             size /= 1024
         return f"{size:.1f} TB"
     
-    def get_thumbnail(self, photo_path: str) -> Path | None:
+    def get_thumbnail(self, photo_path: str) -> Optional[Path]:
         """Get or generate a thumbnail for a photo."""
         full_path = self.library_path / photo_path
         

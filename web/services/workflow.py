@@ -1,10 +1,12 @@
 """Workflow engine service."""
+from __future__ import annotations
+
 import json
 import subprocess
 import uuid
 from datetime import datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 
 
 class WorkflowService:
@@ -34,7 +36,7 @@ class WorkflowService:
         
         return workflow_id
     
-    def load(self, workflow_id: str) -> dict | None:
+    def load(self, workflow_id: str) -> Optional[dict]:
         """Load a workflow by ID."""
         filepath = self.data_dir / f'{workflow_id}.json'
         

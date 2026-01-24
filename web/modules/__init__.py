@@ -1,6 +1,8 @@
 """Workflow module loader."""
+from __future__ import annotations
+
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
     from .base import WorkflowModule
@@ -51,7 +53,7 @@ def get_all_modules() -> list["WorkflowModule"]:
     return sorted(modules.values(), key=lambda m: m.order)
 
 
-def get_module(module_id: str) -> "WorkflowModule | None":
+def get_module(module_id: str) -> "Optional[WorkflowModule]":
     """Get a specific module by ID."""
     modules = load_modules()
     return modules.get(module_id)
