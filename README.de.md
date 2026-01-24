@@ -71,6 +71,7 @@ pg-album export "Hochzeit_Highlights" --to ~/Desktop/ForFamily/
 | `pg-album` | Album-Management mit Symlinks |
 | `pg-develop` | RAW zu JPG Entwicklung |
 | `pg-verify` | Checksum-basierte Integritätsprüfung |
+| `pg-web` | Web-Interface starten (öffnet Browser) |
 
 ## Konfiguration
 

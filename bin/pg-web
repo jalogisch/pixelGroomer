@@ -1,0 +1,222 @@
+#!/usr/bin/env bash
+# PixelGroomer - Web Interface Launcher
+# Starts the Flask web server and opens the browser
+
+set -euo pipefail
+
+# Get script directory and project root
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PIXELGROOMER_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+WEB_DIR="${PIXELGROOMER_ROOT}/web"
+VENV_DIR="${PIXELGROOMER_ROOT}/.venv"
+
+# Default settings
+HOST="${PG_WEB_HOST:-127.0.0.1}"
+PORT="${PG_WEB_PORT:-5000}"
+DEBUG="${PG_WEB_DEBUG:-true}"
+OPEN_BROWSER="${PG_WEB_OPEN_BROWSER:-true}"
+
+# Colors
+COLOR_RESET="\033[0m"
+COLOR_GREEN="\033[0;32m"
+COLOR_YELLOW="\033[0;33m"
+COLOR_RED="\033[0;31m"
+COLOR_CYAN="\033[0;36m"
+
+log_info() { echo -e "${COLOR_CYAN}[INFO]${COLOR_RESET} $1"; }
+log_success() { echo -e "${COLOR_GREEN}[OK]${COLOR_RESET} $1"; }
+log_warn() { echo -e "${COLOR_YELLOW}[WARN]${COLOR_RESET} $1"; }
+log_error() { echo -e "${COLOR_RED}[ERROR]${COLOR_RESET} $1" >&2; }
+
+show_help() {
+    cat << 'EOF'
+PixelGroomer Web - Start the web interface
+
+Usage: pg-web [OPTIONS]
+
+Options:
+  -p, --port PORT     Server port (default: 5000, or PG_WEB_PORT)
+  -H, --host HOST     Server host (default: 127.0.0.1, or PG_WEB_HOST)
+  --no-browser        Don't open browser automatically
+  --no-debug          Disable Flask debug mode
+  --production        Run in production mode (no debug, host 0.0.0.0)
+  -h, --help          Show this help
+
+Environment Variables:
+  PG_WEB_HOST         Default host address
+  PG_WEB_PORT         Default port number
+  PG_WEB_DEBUG        Enable debug mode (true/false)
+  PG_WEB_OPEN_BROWSER Open browser on start (true/false)
+
+Examples:
+  pg-web                      # Start with defaults, open browser
+  pg-web --port 8080          # Use custom port
+  pg-web --no-browser         # Start without opening browser
+  pg-web --production         # Production mode on all interfaces
+
+EOF
+}
+
+# Check if a command exists
+require_command() {
+    if ! command -v "$1" &>/dev/null; then
+        log_error "Required command not found: $1"
+        return 1
+    fi
+}
+
+# Check and setup virtual environment
+setup_venv() {
+    if [[ ! -d "$VENV_DIR" ]]; then
+        log_warn "Virtual environment not found"
+        log_info "Running setup script..."
+        
+        if [[ -x "${PIXELGROOMER_ROOT}/setup.sh" ]]; then
+            "${PIXELGROOMER_ROOT}/setup.sh"
+        else
+            log_error "Setup script not found: ${PIXELGROOMER_ROOT}/setup.sh"
+            exit 1
+        fi
+    fi
+    
+    # Verify venv has Python
+    if [[ ! -f "${VENV_DIR}/bin/python" ]]; then
+        log_error "Virtual environment is broken. Please run: ./setup.sh"
+        exit 1
+    fi
+}
+
+# Install web dependencies
+install_web_deps() {
+    local requirements="${WEB_DIR}/requirements.txt"
+    
+    if [[ ! -f "$requirements" ]]; then
+        log_error "Web requirements not found: $requirements"
+        exit 1
+    fi
+    
+    # Check if Flask is installed
+    if ! "${VENV_DIR}/bin/python" -c "import flask" 2>/dev/null; then
+        log_info "Installing web dependencies..."
+        "${VENV_DIR}/bin/pip" install -q -r "$requirements"
+        log_success "Web dependencies installed"
+    fi
+}
+
+# Open browser (cross-platform)
+open_browser() {
+    local url="$1"
+    
+    # Wait a moment for server to start
+    sleep 1.5
+    
+    if [[ "$(uname)" == "Darwin" ]]; then
+        open "$url" 2>/dev/null || true
+    elif [[ "$(uname)" == "Linux" ]]; then
+        if command -v xdg-open &>/dev/null; then
+            xdg-open "$url" 2>/dev/null || true
+        elif command -v gnome-open &>/dev/null; then
+            gnome-open "$url" 2>/dev/null || true
+        fi
+    elif [[ "$(uname -s)" == MINGW* ]] || [[ "$(uname -s)" == CYGWIN* ]]; then
+        start "$url" 2>/dev/null || true
+    fi
+}
+
+# Cleanup on exit
+cleanup() {
+    # Kill background jobs
+    jobs -p | xargs -r kill 2>/dev/null || true
+}
+
+trap cleanup EXIT
+
+# =============================================================================
+# Main
+# =============================================================================
+
+main() {
+    # Parse arguments
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            -p|--port)
+                PORT="$2"
+                shift 2
+                ;;
+            -H|--host)
+                HOST="$2"
+                shift 2
+                ;;
+            --no-browser)
+                OPEN_BROWSER="false"
+                shift
+                ;;
+            --no-debug)
+                DEBUG="false"
+                shift
+                ;;
+            --production)
+                DEBUG="false"
+                HOST="0.0.0.0"
+                shift
+                ;;
+            -h|--help)
+                show_help
+                exit 0
+                ;;
+            *)
+                log_error "Unknown option: $1"
+                show_help
+                exit 1
+                ;;
+        esac
+    done
+    
+    # Check requirements
+    require_command python3
+    
+    # Setup environment
+    log_info "Checking environment..."
+    setup_venv
+    install_web_deps
+    
+    # Build Flask command
+    local flask_cmd=("${VENV_DIR}/bin/python" "-m" "flask" "run")
+    flask_cmd+=("--host" "$HOST")
+    flask_cmd+=("--port" "$PORT")
+    
+    if [[ "$DEBUG" == "true" ]]; then
+        flask_cmd+=("--debug")
+    fi
+    
+    local url="http://${HOST}:${PORT}"
+    
+    # Display startup message
+    echo ""
+    echo "╔══════════════════════════════════════════════════════════════╗"
+    echo "║                  PixelGroomer Web Interface                  ║"
+    echo "╚══════════════════════════════════════════════════════════════╝"
+    echo ""
+    log_info "Starting server at ${url}"
+    log_info "Press Ctrl+C to stop"
+    echo ""
+    
+    # Open browser in background
+    if [[ "$OPEN_BROWSER" == "true" ]]; then
+        open_browser "$url" &
+    fi
+    
+    # Start Flask server
+    cd "$WEB_DIR"
+    export FLASK_APP="app.py"
+    
+    if [[ "$DEBUG" == "true" ]]; then
+        export FLASK_ENV="development"
+    else
+        export FLASK_ENV="production"
+    fi
+    
+    exec "${flask_cmd[@]}"
+}
+
+main "$@"

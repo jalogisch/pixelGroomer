@@ -259,6 +259,18 @@ All colors are defined as CSS custom properties:
 
 ## Running the Web Interface
 
+### Quick Start
+
+```bash
+# Start web interface and open browser
+pg-web
+
+# Or with custom port
+pg-web --port 8080
+```
+
+### Manual Start
+
 ```bash
 # From project root
 cd web
@@ -267,6 +279,16 @@ flask run --debug
 
 # Open http://localhost:5000
 ```
+
+### pg-web Options
+
+| Option | Description |
+|--------|-------------|
+| `-p, --port PORT` | Server port (default: 5000) |
+| `-H, --host HOST` | Server host (default: 127.0.0.1) |
+| `--no-browser` | Don't open browser automatically |
+| `--no-debug` | Disable Flask debug mode |
+| `--production` | Production mode (no debug, host 0.0.0.0) |
 
 ## Dependencies
 
