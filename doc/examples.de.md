@@ -52,6 +52,54 @@ MAX_FILE_SIZE_KB=2048  # ~2MB Zielgröße
 ./examples/enduro-workflow.sh /Volumes/EOS_DIGITAL --day 2
 ```
 
+### Bestätigung vor Verarbeitung
+
+Das Script zeigt einen detaillierten Plan bevor die Verarbeitung startet:
+
+```
+╔══════════════════════════════════════════════════════════════════════╗
+║                    ENDURO EVENT WORKFLOW - PLAN                      ║
+╚══════════════════════════════════════════════════════════════════════╝
+
+┌──────────────────────────────────────────────────────────────────────┐
+│  SOURCE ANALYSIS                                                     │
+├──────────────────────────────────────────────────────────────────────┤
+│  Path: /Volumes/EOS_DIGITAL                                          │
+│  Files found:                                                        │
+│    RAW files (CR2/CR3/NEF/ARW/etc.): 247                            │
+│    JPG files:                        0                               │
+│    Total photos:                     247                             │
+│  Total size: 8.2 GB                                                  │
+└──────────────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────────┐
+│  METADATA TO BE APPLIED                                             │
+├──────────────────────────────────────────────────────────────────────┤
+│  Event:     2026-01-24 Endurotraining                               │
+│  Location:  Stadtoldendorf                                          │
+│  GPS:       51.875222,9.648111 (if missing on photos)               │
+│  Author:    Jan Doberstein                                          │
+│  Artist:    pixelpiste                                              │
+│  Copyright: Unlicense - Public Domain                               │
+└──────────────────────────────────────────────────────────────────────┘
+
+...
+
+╔══════════════════════════════════════════════════════════════════════╗
+║  Type YES to start processing, or anything else to abort            ║
+╚══════════════════════════════════════════════════════════════════════╝
+
+Confirm: YES
+```
+
+Nur die Eingabe von `YES` (exakt, Groß-/Kleinschreibung beachten) startet die Verarbeitung. Jede andere Eingabe bricht ab.
+
+Nutze `-y` oder `--yes` um die Bestätigung für automatisierte Workflows zu überspringen:
+
+```bash
+./examples/enduro-workflow.sh /Volumes/EOS_DIGITAL --yes
+```
+
 ### Workflow-Schritte
 
 Das Script führt diese Schritte automatisch aus:
@@ -72,14 +120,11 @@ Das Script führt diese Schritte automatisch aus:
 | `--darktable-preset P` | Bestimmtes darktable-Preset anwenden |
 | `--skip-import` | Bereits importierten Ordner verarbeiten |
 | `--skip-develop` | RAW-Entwicklung überspringen |
-| `--dry-run` | Vorschau ohne Änderungen |
+| `-y, --yes` | Bestätigung überspringen, sofort starten |
 
 ### Beispiele
 
 ```bash
-# Vorschau was passieren würde (Trockenlauf)
-./examples/enduro-workflow.sh /Volumes/EOS_DIGITAL --dry-run
-
 # Bereits importierte Fotos verarbeiten
 ./examples/enduro-workflow.sh --skip-import ~/Pictures/PhotoLibrary/2026-01-24
 
@@ -88,6 +133,9 @@ Das Script führt diese Schritte automatisch aus:
 
 # Benutzerdefinierter Event-Name
 ./examples/enduro-workflow.sh /Volumes/EOS_DIGITAL --event "GS Trophy Training 2026"
+
+# Bestätigung überspringen (für automatisierte Scripts)
+./examples/enduro-workflow.sh /Volumes/EOS_DIGITAL --yes
 ```
 
 ### Ausgabe-Struktur
