@@ -1,0 +1,423 @@
+#!/usr/bin/env bash
+# PixelGroomer - Verify Script
+# Generates and verifies file checksums for integrity checking
+
+set -euo pipefail
+
+# Get script directory and load libraries
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=../lib/config.sh disable=SC1091
+source "$SCRIPT_DIR/../lib/config.sh"
+# shellcheck source=../lib/utils.sh disable=SC1091
+source "$SCRIPT_DIR/../lib/utils.sh"
+
+# =============================================================================
+# Script Variables
+# =============================================================================
+
+TARGET_PATH=""
+MODE=""  # generate, check, update
+RECURSIVE=true
+VERBOSE=false
+
+CHECKSUM_FILE=".checksums"
+
+# =============================================================================
+# Help
+# =============================================================================
+
+show_help() {
+    cat << EOF
+pg-verify - File integrity verification using checksums
+
+USAGE:
+    pg-verify <path> <mode> [options]
+
+ARGUMENTS:
+    <path>                Directory to process
+
+MODES:
+    -g, --generate        Generate checksums for all files
+    -c, --check           Verify files against stored checksums
+    -u, --update          Add new files, keep existing checksums
+
+OPTIONS:
+    --no-recursive        Only process the specified directory
+    -v, --verbose         Show detailed output
+    -h, --help            Show this help message
+
+EXAMPLES:
+    pg-verify ~/Pictures/PhotoLibrary --generate
+    pg-verify ~/Pictures/PhotoLibrary --check
+    pg-verify ~/Pictures/PhotoLibrary --update
+
+CHECKSUM FILE:
+    Checksums are stored in .checksums files in each directory.
+    Format: <checksum>  <filename>
+
+    Algorithm: $CHECKSUM_ALGORITHM (configured in .env)
+
+EOF
+}
+
+# =============================================================================
+# Argument Parsing
+# =============================================================================
+
+parse_args() {
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            -g|--generate)
+                MODE="generate"
+                shift
+                ;;
+            -c|--check)
+                MODE="check"
+                shift
+                ;;
+            -u|--update)
+                MODE="update"
+                shift
+                ;;
+            --no-recursive)
+                RECURSIVE=false
+                shift
+                ;;
+            -v|--verbose)
+                VERBOSE=true
+                shift
+                ;;
+            -h|--help)
+                show_help
+                exit 0
+                ;;
+            -*)
+                log_error "Unknown option: $1"
+                show_help
+                exit 1
+                ;;
+            *)
+                if [[ -z "$TARGET_PATH" ]]; then
+                    TARGET_PATH="$1"
+                else
+                    log_error "Unexpected argument: $1"
+                    exit 1
+                fi
+                shift
+                ;;
+        esac
+    done
+    
+    if [[ -z "$TARGET_PATH" ]]; then
+        log_error "Path is required"
+        show_help
+        exit 1
+    fi
+    
+    if [[ -z "$MODE" ]]; then
+        log_error "Mode is required (--generate, --check, or --update)"
+        show_help
+        exit 1
+    fi
+}
+
+# =============================================================================
+# Checksum Operations
+# =============================================================================
+
+# Get all directories to process
+get_directories() {
+    local base_path="$1"
+    
+    if [[ "$RECURSIVE" == "true" ]]; then
+        find "$base_path" -type d 2>/dev/null
+    else
+        echo "$base_path"
+    fi
+}
+
+# Get files in a directory (excluding hidden and checksum files)
+get_files_in_dir() {
+    local dir="$1"
+    
+    for file in "$dir"/*; do
+        [[ ! -f "$file" ]] && continue
+        [[ "$(basename "$file")" == .* ]] && continue
+        echo "$file"
+    done
+}
+
+# Load existing checksums from file
+load_checksums() {
+    local checksum_file="$1"
+    
+    if [[ -f "$checksum_file" ]]; then
+        cat "$checksum_file"
+    fi
+}
+
+# Generate checksums for a directory
+generate_checksums() {
+    local dir="$1"
+    local checksum_file="${dir}/${CHECKSUM_FILE}"
+    
+    local files=()
+    while IFS= read -r file; do
+        [[ -n "$file" ]] && files+=("$file")
+    done < <(get_files_in_dir "$dir")
+    
+    if [[ ${#files[@]} -eq 0 ]]; then
+        return 0
+    fi
+    
+    # Generate new checksum file
+    local temp_file
+    temp_file=$(mktemp)
+    
+    for file in "${files[@]}"; do
+        local filename
+        filename=$(basename "$file")
+        local checksum
+        checksum=$(generate_checksum "$file" "$CHECKSUM_ALGORITHM")
+        
+        echo "$checksum  $filename" >> "$temp_file"
+    done
+    
+    mv "$temp_file" "$checksum_file"
+    echo "${#files[@]}"
+}
+
+# Verify checksums for a directory
+verify_checksums() {
+    local dir="$1"
+    local checksum_file="${dir}/${CHECKSUM_FILE}"
+    
+    if [[ ! -f "$checksum_file" ]]; then
+        echo "0|0|0|no_checksum_file"
+        return 0
+    fi
+    
+    local ok=0
+    local failed=0
+    local missing=0
+    local errors=()
+    
+    while IFS= read -r line; do
+        [[ -z "$line" ]] && continue
+        
+        local expected_sum="${line%%  *}"
+        local filename="${line#*  }"
+        local filepath="${dir}/${filename}"
+        
+        if [[ ! -f "$filepath" ]]; then
+            ((missing++))
+            errors+=("MISSING: $filename")
+            continue
+        fi
+        
+        local actual_sum
+        actual_sum=$(generate_checksum "$filepath" "$CHECKSUM_ALGORITHM")
+        
+        if [[ "$actual_sum" == "$expected_sum" ]]; then
+            ((ok++))
+        else
+            ((failed++))
+            errors+=("MISMATCH: $filename")
+        fi
+    done < "$checksum_file"
+    
+    # Output results
+    echo "${ok}|${failed}|${missing}|${errors[*]:-}"
+}
+
+# Update checksums (add new, keep existing)
+update_checksums() {
+    local dir="$1"
+    local checksum_file="${dir}/${CHECKSUM_FILE}"
+    
+    # Load existing checksums (Bash 3.2 compatible)
+    local existing_sums
+    existing_sums=$(map_init)
+    
+    if [[ -f "$checksum_file" ]]; then
+        while IFS= read -r line; do
+            [[ -z "$line" ]] && continue
+            local sum="${line%%  *}"
+            local name="${line#*  }"
+            map_set "$existing_sums" "$name" "$sum"
+        done < "$checksum_file"
+    fi
+    
+    # Check all files
+    local added=0
+    local kept=0
+    
+    local temp_file
+    temp_file=$(mktemp)
+    
+    for file in "$dir"/*; do
+        [[ ! -f "$file" ]] && continue
+        [[ "$(basename "$file")" == .* ]] && continue
+        
+        local filename
+        filename=$(basename "$file")
+        
+        if map_has "$existing_sums" "$filename"; then
+            # Keep existing
+            local existing_sum
+            existing_sum=$(map_get "$existing_sums" "$filename")
+            echo "${existing_sum}  $filename" >> "$temp_file"
+            ((kept++))
+        else
+            # Generate new
+            local checksum
+            checksum=$(generate_checksum "$file" "$CHECKSUM_ALGORITHM")
+            echo "$checksum  $filename" >> "$temp_file"
+            ((added++))
+        fi
+    done
+    
+    map_cleanup "$existing_sums"
+    
+    if [[ -s "$temp_file" ]]; then
+        mv "$temp_file" "$checksum_file"
+    else
+        rm -f "$temp_file"
+    fi
+    
+    echo "${added}|${kept}"
+}
+
+# =============================================================================
+# Main
+# =============================================================================
+
+main() {
+    parse_args "$@"
+    
+    require_path "$TARGET_PATH" "dir"
+    
+    log_step "PixelGroomer Verify"
+    log_info "Path: $TARGET_PATH"
+    log_info "Mode: $MODE"
+    log_info "Algorithm: $CHECKSUM_ALGORITHM"
+    
+    echo ""
+    
+    # Collect directories
+    local dirs=()
+    while IFS= read -r dir; do
+        [[ -n "$dir" ]] && dirs+=("$dir")
+    done < <(get_directories "$TARGET_PATH")
+    
+    local total_dirs=${#dirs[@]}
+    log_info "Processing $total_dirs directories"
+    echo ""
+    
+    case "$MODE" in
+        generate)
+            log_step "Generating checksums..."
+            
+            local total_files=0
+            local i=0
+            
+            for dir in "${dirs[@]}"; do
+                ((i++))
+                log_progress "$i" "$total_dirs" "Scanning"
+                
+                local count
+                count=$(generate_checksums "$dir")
+                total_files=$((total_files + count))
+            done
+            
+            echo ""
+            log_success "Generated checksums for $total_files files in $total_dirs directories"
+            ;;
+            
+        check)
+            log_step "Verifying checksums..."
+            
+            local total_ok=0
+            local total_failed=0
+            local total_missing=0
+            local all_errors=()
+            local dirs_without_checksums=0
+            local i=0
+            
+            for dir in "${dirs[@]}"; do
+                ((i++))
+                log_progress "$i" "$total_dirs" "Verifying"
+                
+                local result
+                result=$(verify_checksums "$dir")
+                
+                IFS='|' read -r ok failed missing errors <<< "$result"
+                
+                if [[ "$errors" == "no_checksum_file" ]]; then
+                    ((dirs_without_checksums++))
+                    continue
+                fi
+                
+                total_ok=$((total_ok + ok))
+                total_failed=$((total_failed + failed))
+                total_missing=$((total_missing + missing))
+                
+                if [[ -n "$errors" ]]; then
+                    all_errors+=("$dir: $errors")
+                fi
+            done
+            
+            echo ""
+            echo ""
+            
+            if [[ $total_failed -eq 0 && $total_missing -eq 0 ]]; then
+                log_success "All files verified successfully!"
+                log_info "  Verified: $total_ok files"
+                [[ $dirs_without_checksums -gt 0 ]] && \
+                    log_info "  Directories without checksums: $dirs_without_checksums"
+            else
+                log_error "Verification found issues!"
+                log_info "  OK: $total_ok"
+                [[ $total_failed -gt 0 ]] && log_error "  FAILED: $total_failed"
+                [[ $total_missing -gt 0 ]] && log_warn "  MISSING: $total_missing"
+                
+                if [[ "$VERBOSE" == "true" && ${#all_errors[@]} -gt 0 ]]; then
+                    echo ""
+                    log_info "Details:"
+                    for err in "${all_errors[@]}"; do
+                        echo "  $err"
+                    done
+                fi
+                
+                exit 1
+            fi
+            ;;
+            
+        update)
+            log_step "Updating checksums..."
+            
+            local total_added=0
+            local total_kept=0
+            local i=0
+            
+            for dir in "${dirs[@]}"; do
+                ((i++))
+                log_progress "$i" "$total_dirs" "Updating"
+                
+                local result
+                result=$(update_checksums "$dir")
+                
+                IFS='|' read -r added kept <<< "$result"
+                total_added=$((total_added + added))
+                total_kept=$((total_kept + kept))
+            done
+            
+            echo ""
+            log_success "Checksums updated"
+            log_info "  New: $total_added files"
+            log_info "  Existing: $total_kept files"
+            ;;
+    esac
+}
+
+main "$@"

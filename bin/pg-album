@@ -1,0 +1,623 @@
+#!/usr/bin/env bash
+# PixelGroomer - Album Management Script
+# Creates and manages photo albums using symlinks
+
+set -euo pipefail
+
+# Get script directory and load libraries
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=../lib/config.sh disable=SC1091
+source "$SCRIPT_DIR/../lib/config.sh"
+# shellcheck source=../lib/utils.sh disable=SC1091
+source "$SCRIPT_DIR/../lib/utils.sh"
+
+# =============================================================================
+# Help
+# =============================================================================
+
+show_help() {
+    cat << EOF
+pg-album - Manage photo albums using symlinks
+
+USAGE:
+    pg-album <command> [arguments]
+
+COMMANDS:
+    create <name>              Create a new album
+    delete <name>              Delete an album
+    add <album> <files...>     Add photos to album (creates symlinks)
+    remove <album> <files...>  Remove photos from album
+    list                       List all albums
+    show <name>                Show album contents
+    export <name> --to <dir>   Export album (copy actual files)
+    info <name>                Show album metadata
+
+OPTIONS:
+    -v, --verbose             Show detailed output
+    -h, --help                Show this help message
+
+EXAMPLES:
+    pg-album create "Wedding_Highlights"
+    pg-album add "Wedding_Highlights" ~/Photos/2026-01-24/*.jpg
+    pg-album list
+    pg-album show "Wedding_Highlights"
+    pg-album export "Wedding_Highlights" --to ~/Desktop/ForFamily/
+
+NOTES:
+    - Albums use symlinks to avoid duplicating files
+    - Original files remain in PhotoLibrary
+    - Export creates real copies for sharing
+
+EOF
+}
+
+# =============================================================================
+# Album Metadata
+# =============================================================================
+
+# shellcheck disable=SC2153  # ALBUM_DIR is set by config.sh
+ALBUMS_META_FILE="${ALBUM_DIR}/.albums.json"
+
+# Initialize albums metadata file if needed
+init_albums_meta() {
+    mkdir -p "$ALBUM_DIR"
+    
+    if [[ ! -f "$ALBUMS_META_FILE" ]]; then
+        echo '{"albums": {}}' > "$ALBUMS_META_FILE"
+    fi
+}
+
+# Get album metadata
+get_album_meta() {
+    local album_name="$1"
+    require_venv
+    
+    "$(get_python)" << PYEOF
+import json
+import sys
+
+try:
+    with open('$ALBUMS_META_FILE', 'r') as f:
+        data = json.load(f)
+    
+    album = data.get('albums', {}).get('$album_name')
+    if album:
+        print(json.dumps(album))
+    else:
+        sys.exit(1)
+except Exception as e:
+    sys.exit(1)
+PYEOF
+}
+
+# Update album metadata
+update_album_meta() {
+    local album_name="$1"
+    local field="$2"
+    local value="$3"
+    require_venv
+    
+    "$(get_python)" << PYEOF
+import json
+from datetime import datetime
+
+with open('$ALBUMS_META_FILE', 'r') as f:
+    data = json.load(f)
+
+if 'albums' not in data:
+    data['albums'] = {}
+
+if '$album_name' not in data['albums']:
+    data['albums']['$album_name'] = {
+        'created': datetime.now().isoformat(),
+        'count': 0
+    }
+
+data['albums']['$album_name']['$field'] = $value
+data['albums']['$album_name']['modified'] = datetime.now().isoformat()
+
+with open('$ALBUMS_META_FILE', 'w') as f:
+    json.dump(data, f, indent=2)
+PYEOF
+}
+
+# Delete album from metadata
+delete_album_meta() {
+    local album_name="$1"
+    require_venv
+    
+    "$(get_python)" << PYEOF
+import json
+
+with open('$ALBUMS_META_FILE', 'r') as f:
+    data = json.load(f)
+
+if '$album_name' in data.get('albums', {}):
+    del data['albums']['$album_name']
+
+with open('$ALBUMS_META_FILE', 'w') as f:
+    json.dump(data, f, indent=2)
+PYEOF
+}
+
+# Count files in album
+count_album_files() {
+    local album_dir="$1"
+    
+    find "$album_dir" -maxdepth 1 -type l 2>/dev/null | wc -l | tr -d ' '
+}
+
+# =============================================================================
+# Commands
+# =============================================================================
+
+cmd_create() {
+    local album_name="$1"
+    
+    if [[ -z "$album_name" ]]; then
+        log_error "Album name is required"
+        exit 1
+    fi
+    
+    # Sanitize album name
+    local safe_name
+    safe_name=$(sanitize_filename "$album_name")
+    local album_path="${ALBUM_DIR}/${safe_name}"
+    
+    if [[ -d "$album_path" ]]; then
+        log_error "Album already exists: $safe_name"
+        exit 1
+    fi
+    
+    mkdir -p "$album_path"
+    update_album_meta "$safe_name" "count" "0"
+    
+    log_success "Created album: $safe_name"
+    log_info "Path: $album_path"
+}
+
+cmd_delete() {
+    local album_name="$1"
+    
+    if [[ -z "$album_name" ]]; then
+        log_error "Album name is required"
+        exit 1
+    fi
+    
+    local safe_name
+    safe_name=$(sanitize_filename "$album_name")
+    local album_path="${ALBUM_DIR}/${safe_name}"
+    
+    if [[ ! -d "$album_path" ]]; then
+        log_error "Album not found: $safe_name"
+        exit 1
+    fi
+    
+    local count
+    count=$(count_album_files "$album_path")
+    
+    if ! confirm "Delete album '$safe_name' with $count photos?" "n"; then
+        log_info "Delete cancelled"
+        exit 0
+    fi
+    
+    rm -rf "$album_path"
+    delete_album_meta "$safe_name"
+    
+    log_success "Deleted album: $safe_name"
+}
+
+cmd_add() {
+    local album_name="$1"
+    shift
+    local files=("$@")
+    
+    if [[ -z "$album_name" ]]; then
+        log_error "Album name is required"
+        exit 1
+    fi
+    
+    if [[ ${#files[@]} -eq 0 ]]; then
+        log_error "At least one file is required"
+        exit 1
+    fi
+    
+    local safe_name
+    safe_name=$(sanitize_filename "$album_name")
+    local album_path="${ALBUM_DIR}/${safe_name}"
+    
+    # Create album if it doesn't exist
+    if [[ ! -d "$album_path" ]]; then
+        log_info "Creating new album: $safe_name"
+        mkdir -p "$album_path"
+    fi
+    
+    local added=0
+    local skipped=0
+    
+    for file in "${files[@]}"; do
+        # Handle glob patterns that might not match
+        [[ ! -e "$file" ]] && continue
+        
+        # Get absolute path
+        local abs_path
+        abs_path=$(cd "$(dirname "$file")" && pwd)/$(basename "$file")
+        
+        if [[ ! -f "$abs_path" ]]; then
+            log_warn "Not a file: $file"
+            continue
+        fi
+        
+        local filename
+        filename=$(basename "$file")
+        local link_path="${album_path}/${filename}"
+        
+        # Skip if already in album
+        if [[ -L "$link_path" ]]; then
+            ((skipped++))
+            continue
+        fi
+        
+        # Handle name conflicts
+        if [[ -e "$link_path" ]]; then
+            local base ext counter
+            base=$(get_basename "$filename")
+            ext=$(get_extension "$filename")
+            counter=1
+            
+            while [[ -e "${album_path}/${base}_${counter}.${ext}" ]]; do
+                ((counter++))
+            done
+            
+            link_path="${album_path}/${base}_${counter}.${ext}"
+        fi
+        
+        # Create symlink
+        ln -s "$abs_path" "$link_path"
+        ((added++))
+    done
+    
+    # Update metadata
+    local total
+    total=$(count_album_files "$album_path")
+    update_album_meta "$safe_name" "count" "$total"
+    
+    log_success "Added $added photos to '$safe_name' ($skipped already in album)"
+}
+
+cmd_remove() {
+    local album_name="$1"
+    shift
+    local files=("$@")
+    
+    if [[ -z "$album_name" ]]; then
+        log_error "Album name is required"
+        exit 1
+    fi
+    
+    local safe_name
+    safe_name=$(sanitize_filename "$album_name")
+    local album_path="${ALBUM_DIR}/${safe_name}"
+    
+    if [[ ! -d "$album_path" ]]; then
+        log_error "Album not found: $safe_name"
+        exit 1
+    fi
+    
+    local removed=0
+    
+    for file in "${files[@]}"; do
+        local filename
+        filename=$(basename "$file")
+        local link_path="${album_path}/${filename}"
+        
+        if [[ -L "$link_path" ]]; then
+            rm "$link_path"
+            ((removed++))
+        else
+            log_warn "Not in album: $filename"
+        fi
+    done
+    
+    # Update metadata
+    local total
+    total=$(count_album_files "$album_path")
+    update_album_meta "$safe_name" "count" "$total"
+    
+    log_success "Removed $removed photos from '$safe_name'"
+}
+
+cmd_list() {
+    init_albums_meta
+    
+    log_step "Albums"
+    echo ""
+    
+    local found=false
+    
+    for album_dir in "$ALBUM_DIR"/*/; do
+        [[ ! -d "$album_dir" ]] && continue
+        found=true
+        
+        local name
+        name=$(basename "$album_dir")
+        local count
+        count=$(count_album_files "$album_dir")
+        
+        printf "  %-30s %5d photos\n" "$name" "$count"
+    done
+    
+    if [[ "$found" == "false" ]]; then
+        log_info "No albums found"
+        log_info "Create one with: pg-album create \"Album Name\""
+    fi
+}
+
+cmd_show() {
+    local album_name="$1"
+    
+    if [[ -z "$album_name" ]]; then
+        log_error "Album name is required"
+        exit 1
+    fi
+    
+    local safe_name
+    safe_name=$(sanitize_filename "$album_name")
+    local album_path="${ALBUM_DIR}/${safe_name}"
+    
+    if [[ ! -d "$album_path" ]]; then
+        log_error "Album not found: $safe_name"
+        exit 1
+    fi
+    
+    log_step "Album: $safe_name"
+    echo ""
+    
+    local count=0
+    
+    for link in "$album_path"/*; do
+        [[ ! -L "$link" ]] && continue
+        
+        local filename
+        filename=$(basename "$link")
+        local target
+        target=$(readlink "$link")
+        
+        # Check if target exists
+        if [[ -e "$link" ]]; then
+            echo "  $filename"
+        else
+            echo "  $filename [BROKEN -> $target]"
+        fi
+        
+        ((count++))
+    done
+    
+    echo ""
+    log_info "Total: $count photos"
+}
+
+cmd_info() {
+    local album_name="$1"
+    
+    if [[ -z "$album_name" ]]; then
+        log_error "Album name is required"
+        exit 1
+    fi
+    
+    local safe_name
+    safe_name=$(sanitize_filename "$album_name")
+    local album_path="${ALBUM_DIR}/${safe_name}"
+    
+    if [[ ! -d "$album_path" ]]; then
+        log_error "Album not found: $safe_name"
+        exit 1
+    fi
+    
+    log_step "Album Info: $safe_name"
+    echo ""
+    
+    echo "Path: $album_path"
+    
+    local count
+    count=$(count_album_files "$album_path")
+    echo "Photos: $count"
+    
+    # Calculate total size of referenced files
+    local total_size=0
+    for link in "$album_path"/*; do
+        [[ ! -L "$link" ]] && continue
+        [[ ! -e "$link" ]] && continue
+        
+        local size
+        if [[ "$(uname)" == "Darwin" ]]; then
+            size=$(stat -f "%z" "$(readlink -f "$link")" 2>/dev/null || echo 0)
+        else
+            size=$(stat --printf="%s" "$(readlink -f "$link")" 2>/dev/null || echo 0)
+        fi
+        total_size=$((total_size + size))
+    done
+    
+    # Format size
+    if [[ $total_size -ge 1073741824 ]]; then
+        echo "Total Size: $(echo "scale=2; $total_size / 1073741824" | bc) GB (if exported)"
+    elif [[ $total_size -ge 1048576 ]]; then
+        echo "Total Size: $(echo "scale=2; $total_size / 1048576" | bc) MB (if exported)"
+    else
+        echo "Total Size: $(echo "scale=2; $total_size / 1024" | bc) KB (if exported)"
+    fi
+    
+    # Show metadata if available
+    if meta=$(get_album_meta "$safe_name" 2>/dev/null); then
+        echo ""
+        echo "Metadata:"
+        echo "$meta" | "$(get_python)" -c "
+import json, sys
+data = json.load(sys.stdin)
+if 'created' in data:
+    print(f\"  Created: {data['created'][:19].replace('T', ' ')}\")
+if 'modified' in data:
+    print(f\"  Modified: {data['modified'][:19].replace('T', ' ')}\")
+"
+    fi
+}
+
+cmd_export() {
+    local album_name=""
+    local export_dir=""
+    
+    # Parse arguments
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --to)
+                export_dir="$2"
+                shift 2
+                ;;
+            *)
+                album_name="$1"
+                shift
+                ;;
+        esac
+    done
+    
+    if [[ -z "$album_name" ]]; then
+        log_error "Album name is required"
+        exit 1
+    fi
+    
+    if [[ -z "$export_dir" ]]; then
+        log_error "Export directory is required (use --to <dir>)"
+        exit 1
+    fi
+    
+    local safe_name
+    safe_name=$(sanitize_filename "$album_name")
+    local album_path="${ALBUM_DIR}/${safe_name}"
+    
+    if [[ ! -d "$album_path" ]]; then
+        log_error "Album not found: $safe_name"
+        exit 1
+    fi
+    
+    # Create export directory
+    mkdir -p "$export_dir"
+    
+    log_step "Exporting album: $safe_name"
+    log_info "Destination: $export_dir"
+    echo ""
+    
+    local copied=0
+    local failed=0
+    local total
+    total=$(count_album_files "$album_path")
+    
+    for link in "$album_path"/*; do
+        [[ ! -L "$link" ]] && continue
+        
+        local filename
+        filename=$(basename "$link")
+        local target_file="${export_dir}/${filename}"
+        
+        log_progress $((copied + failed + 1)) "$total" "Exporting"
+        
+        # Check if source exists
+        if [[ ! -e "$link" ]]; then
+            log_warn "Broken link: $filename"
+            ((failed++))
+            continue
+        fi
+        
+        # Copy the actual file (following symlink)
+        if cp -L "$link" "$target_file" 2>/dev/null; then
+            ((copied++))
+        else
+            ((failed++))
+            log_error "Failed to copy: $filename"
+        fi
+    done
+    
+    echo ""
+    log_success "Exported $copied of $total files to $export_dir"
+    [[ $failed -gt 0 ]] && log_warn "$failed files failed"
+}
+
+# =============================================================================
+# Main
+# =============================================================================
+
+main() {
+    # Initialize
+    init_albums_meta
+    
+    # Parse global options and command
+    local command=""
+    local args=()
+    # shellcheck disable=SC2034  # verbose reserved for future use
+    local verbose=false
+    
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            -v|--verbose)
+                # shellcheck disable=SC2034
+                verbose=true
+                shift
+                ;;
+            -h|--help)
+                show_help
+                exit 0
+                ;;
+            -*)
+                # Pass through to command
+                args+=("$1")
+                shift
+                ;;
+            *)
+                if [[ -z "$command" ]]; then
+                    command="$1"
+                else
+                    args+=("$1")
+                fi
+                shift
+                ;;
+        esac
+    done
+    
+    if [[ -z "$command" ]]; then
+        show_help
+        exit 1
+    fi
+    
+    case "$command" in
+        create)
+            cmd_create "${args[@]:-}"
+            ;;
+        delete|rm)
+            cmd_delete "${args[@]:-}"
+            ;;
+        add)
+            cmd_add "${args[@]:-}"
+            ;;
+        remove)
+            cmd_remove "${args[@]:-}"
+            ;;
+        list|ls)
+            cmd_list
+            ;;
+        show)
+            cmd_show "${args[@]:-}"
+            ;;
+        info)
+            cmd_info "${args[@]:-}"
+            ;;
+        export)
+            cmd_export "${args[@]:-}"
+            ;;
+        *)
+            log_error "Unknown command: $command"
+            show_help
+            exit 1
+            ;;
+    esac
+}
+
+main "$@"

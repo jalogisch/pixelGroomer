@@ -1,0 +1,45 @@
+# PixelGroomer .gitignore
+
+# Environment config (contains personal settings)
+.env
+
+# Python virtual environment
+.venv/
+venv/
+ENV/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Editor
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+*.sublime-*
+
+# Test outputs
+*.test.jpg
+*_darktable.jpg
+*_imagemagick.jpg
+
+# Temporary files
+*.tmp
+*.temp
+.checksums
+
+# Photo library (if accidentally placed in repo)
+PhotoLibrary/
+Albums/
+Export/

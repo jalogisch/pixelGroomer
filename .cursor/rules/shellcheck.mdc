@@ -1,0 +1,75 @@
+---
+description: ShellCheck validation for shell scripts
+globs: "**/*.sh,**/bin/pg-*"
+alwaysApply: false
+---
+
+# ShellCheck Validation
+
+All shell scripts must pass ShellCheck validation.
+
+## Requirements
+
+```bash
+# Install shellcheck
+brew install shellcheck      # macOS
+apt install shellcheck       # Ubuntu
+```
+
+## Validation
+
+Before committing, all scripts must pass:
+
+```bash
+shellcheck bin/pg-* lib/*.sh setup.sh
+```
+
+## Directive Format
+
+If an exception is needed, use inline directives with explanation:
+
+```bash
+# shellcheck disable=SC2034  # Variable used by sourced scripts
+UNUSED_VAR="value"
+```
+
+## Common Exceptions (Pre-Approved)
+
+These may be disabled with comment explaining why:
+
+| Code | Reason | When Allowed |
+|------|--------|--------------|
+| SC2034 | Unused variable | Variable exported or used by sourced script |
+| SC1090 | Can't follow source | Dynamic source path |
+| SC1091 | File not found | Source file generated at runtime |
+| SC2155 | Declare and assign | When return code not needed |
+
+## Forbidden Exceptions
+
+Never disable these without explicit approval:
+
+- SC2086 - Unquoted variables (fix the quoting)
+- SC2046 - Unquoted command substitution (fix the quoting)
+- SC2006 - Use $() instead of backticks
+
+## Adding New Exceptions
+
+1. Identify the SC code
+2. Explain why it cannot be fixed
+3. Ask before adding the directive
+4. Add directive with comment explaining why
+
+```bash
+# Exception: SC2034 - VAR is used by config.sh when sourced
+# shellcheck disable=SC2034
+MY_EXPORTED_VAR="value"
+```
+
+## CI Integration
+
+Add to Makefile:
+
+```makefile
+lint:
+	shellcheck bin/pg-* lib/*.sh setup.sh
+```

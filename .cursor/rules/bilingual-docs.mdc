@@ -1,0 +1,65 @@
+---
+description: Bilingual documentation and English scripts
+alwaysApply: true
+---
+
+# Bilingual Project Convention
+
+This project is maintained in two languages: German (DE) and English (EN).
+
+## Documentation
+
+All documentation files must exist in both languages:
+
+```
+README.md          # English (primary)
+README.de.md       # German
+
+doc/workflow.en.md
+doc/workflow.de.md
+```
+
+### Naming Convention
+
+- `*.en.md` - English version
+- `*.de.md` - German version
+- `README.md` - English (exception, as primary entry point)
+- `README.de.md` - German
+
+### Cross-linking
+
+Each documentation file must link to its counterpart at the top:
+
+```markdown
+# Title
+
+*[English Version](filename.en.md)*
+```
+
+or
+
+```markdown
+# Title
+
+*[Deutsche Version](filename.de.md)*
+```
+
+## Scripts and Code
+
+- All script output, help texts, and log messages: **English only**
+- Code comments: **English only**
+- Variable/function names: **English only**
+
+## English Style
+
+Write English as a proficient non-native speaker would:
+- Clear and direct
+- No complex idioms
+- Technically precise
+- Simple sentence structures
+
+## When Creating New Documentation
+
+1. Always create both language versions
+2. Keep content synchronized between versions
+3. Update both when making changes

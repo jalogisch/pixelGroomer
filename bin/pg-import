@@ -1,0 +1,615 @@
+#!/usr/bin/env bash
+# PixelGroomer - Import Script
+# Imports photos from SD card with automatic organization, renaming, and EXIF tagging
+
+set -euo pipefail
+
+# Get script directory and load libraries
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=../lib/config.sh disable=SC1091
+source "$SCRIPT_DIR/../lib/config.sh"
+# shellcheck source=../lib/utils.sh disable=SC1091
+source "$SCRIPT_DIR/../lib/utils.sh"
+
+# =============================================================================
+# Script Variables
+# =============================================================================
+
+SOURCE_DIR=""
+ARCHIVE_DIR=""
+EVENT=""
+LOCATION=""
+AUTHOR=""
+DRY_RUN=false
+NO_DELETE=false
+VERBOSE=false
+
+# Track what was set via CLI (for priority handling)
+CLI_EVENT=""
+CLI_LOCATION=""
+CLI_AUTHOR=""
+CLI_ARCHIVE=""
+
+# =============================================================================
+# Help
+# =============================================================================
+
+show_help() {
+    cat << EOF
+pg-import - Import photos from SD card or directory
+
+USAGE:
+    pg-import <source> [options]
+
+ARGUMENTS:
+    <source>              Source directory (e.g., /Volumes/EOS_DIGITAL)
+
+OPTIONS:
+    -e, --event <name>    Event name for metadata and naming
+    -l, --location <loc>  Location for metadata
+    -a, --author <name>   Override default author
+    -o, --output <dir>    Archive/output directory (overrides PHOTO_LIBRARY)
+    -n, --dry-run         Preview changes without modifying files
+    --no-delete           Don't ask to delete source files after import
+    -v, --verbose         Show detailed output
+    -h, --help            Show this help message
+
+EXAMPLES:
+    pg-import /Volumes/EOS_DIGITAL --event "Wedding" --location "Berlin"
+    pg-import /Volumes/EOS_DIGITAL    # Uses .import.yaml or prompts
+    pg-import ./photos --dry-run      # Preview import
+
+CONFIGURATION:
+    Settings are loaded in this order (later overrides earlier):
+    1. .import.yaml on SD card (lowest priority)
+    2. .env configuration file
+    3. CLI arguments (highest priority)
+    4. Interactive prompt (if value still missing)
+
+EOF
+}
+
+# =============================================================================
+# Argument Parsing
+# =============================================================================
+
+parse_args() {
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            -e|--event)
+                CLI_EVENT="$2"
+                shift 2
+                ;;
+            -l|--location)
+                CLI_LOCATION="$2"
+                shift 2
+                ;;
+            -a|--author)
+                CLI_AUTHOR="$2"
+                shift 2
+                ;;
+            -o|--output)
+                CLI_ARCHIVE="$2"
+                shift 2
+                ;;
+            -n|--dry-run)
+                DRY_RUN=true
+                shift
+                ;;
+            --no-delete)
+                NO_DELETE=true
+                shift
+                ;;
+            -v|--verbose)
+                VERBOSE=true
+                shift
+                ;;
+            -h|--help)
+                show_help
+                exit 0
+                ;;
+            -*)
+                log_error "Unknown option: $1"
+                show_help
+                exit 1
+                ;;
+            *)
+                if [[ -z "$SOURCE_DIR" ]]; then
+                    SOURCE_DIR="$1"
+                else
+                    log_error "Unexpected argument: $1"
+                    exit 1
+                fi
+                shift
+                ;;
+        esac
+    done
+    
+    if [[ -z "$SOURCE_DIR" ]]; then
+        log_error "Source directory is required"
+        show_help
+        exit 1
+    fi
+}
+
+# =============================================================================
+# Configuration Loading
+# =============================================================================
+
+# Load configuration with priority: SD-Card YAML < .env < CLI
+load_import_config() {
+    # --- Layer 1: Load from .import.yaml on SD card (lowest priority) ---
+    local yaml_event="" yaml_location="" yaml_author="" yaml_archive=""
+    
+    local yaml_config
+    if yaml_config=$(load_import_yaml "$SOURCE_DIR" 2>/dev/null); then
+        log_info "Found .import.yaml on source"
+        
+        while IFS='=' read -r key value; do
+            case "$key" in
+                event) yaml_event="$value" ;;
+                location) yaml_location="$value" ;;
+                author) yaml_author="$value" ;;
+                archive|output) yaml_archive="$value" ;;
+            esac
+        done <<< "$yaml_config"
+    fi
+    
+    # --- Layer 2: .env values override SD card (loaded via config.sh) ---
+    # DEFAULT_AUTHOR, PHOTO_LIBRARY etc. are already loaded
+    
+    # --- Layer 3: Apply in priority order ---
+    # Start with YAML, override with .env defaults, then CLI
+    
+    # Event: YAML -> (no .env default) -> CLI
+    EVENT="${yaml_event}"
+    [[ -n "$CLI_EVENT" ]] && EVENT="$CLI_EVENT"
+    
+    # Location: YAML -> (no .env default) -> CLI
+    LOCATION="${yaml_location}"
+    [[ -n "$CLI_LOCATION" ]] && LOCATION="$CLI_LOCATION"
+    
+    # Author: YAML -> .env DEFAULT_AUTHOR -> CLI
+    AUTHOR="${yaml_author:-$DEFAULT_AUTHOR}"
+    [[ -n "$CLI_AUTHOR" ]] && AUTHOR="$CLI_AUTHOR"
+    
+    # Archive directory: YAML -> .env PHOTO_LIBRARY -> CLI
+    ARCHIVE_DIR="${yaml_archive:-$PHOTO_LIBRARY}"
+    [[ -n "$CLI_ARCHIVE" ]] && ARCHIVE_DIR="$CLI_ARCHIVE"
+    
+    # --- Layer 4: Interactive prompts for missing values ---
+    
+    # Prompt for archive directory if configured to do so
+    if [[ "${PROMPT_ARCHIVE_DIR:-false}" == "true" && -z "$CLI_ARCHIVE" ]]; then
+        log_info "Archive directory prompt enabled"
+        ARCHIVE_DIR=$(prompt_input "Archive directory" "$ARCHIVE_DIR" "ARCHIVE_DIR")
+    fi
+    
+    # Prompt for event if still missing
+    if [[ -z "$EVENT" ]]; then
+        log_info "No event name specified"
+        EVENT=$(prompt_input "Enter event name" "" "EVENT")
+    fi
+    
+    # Prompt for location (optional)
+    if [[ -z "$LOCATION" ]]; then
+        LOCATION=$(prompt_input "Enter location (optional, press Enter to skip)" "" "LOCATION")
+    fi
+    
+    # Sanitize event name for use in filenames
+    EVENT=$(sanitize_filename "$EVENT")
+    
+    # Show final configuration sources
+    [[ "$VERBOSE" == "true" ]] && log_debug "Config: event='$EVENT' location='$LOCATION' author='$AUTHOR' archive='$ARCHIVE_DIR'"
+}
+
+# =============================================================================
+# File Processing
+# =============================================================================
+
+# Get EXIF date from file using Python helper
+get_exif_date() {
+    local file="$1"
+    
+    run_python_with_lib "
+from exif_utils import ExifTool
+
+exif = ExifTool()
+dt = exif.read_date('$file')
+if dt:
+    print(dt.strftime('%Y%m%d'))
+else:
+    print('')
+" 2>/dev/null || echo ""
+}
+
+# Get camera model from file
+get_camera_model() {
+    local file="$1"
+    
+    run_python_with_lib "
+import re
+from exif_utils import ExifTool
+
+exif = ExifTool()
+camera = exif.read_camera('$file')
+if camera:
+    camera = re.sub(r'[^a-zA-Z0-9]', '', camera)
+    print(camera[:20])
+else:
+    print('')
+" 2>/dev/null || echo ""
+}
+
+# Generate new filename based on pattern
+generate_filename() {
+    local file="$1"
+    local sequence="$2"
+    local date="$3"
+    
+    local ext
+    ext=$(get_extension "$file")
+    
+    local pattern="$NAMING_PATTERN"
+    
+    # Replace placeholders
+    pattern="${pattern//\{date\}/$date}"
+    pattern="${pattern//\{event\}/$EVENT}"
+    
+    # Handle sequence with padding
+    if [[ "$pattern" =~ \{seq:([0-9]+)d\} ]]; then
+        local padding="${BASH_REMATCH[1]}"
+        local padded_seq
+        padded_seq=$(pad_number "$sequence" "$padding")
+        pattern="${pattern//\{seq:${padding}d\}/$padded_seq}"
+    else
+        pattern="${pattern//\{seq\}/$sequence}"
+    fi
+    
+    # Camera model (if in pattern)
+    if [[ "$pattern" == *"{camera}"* ]]; then
+        local camera
+        camera=$(get_camera_model "$file")
+        [[ -z "$camera" ]] && camera="Unknown"
+        pattern="${pattern//\{camera\}/$camera}"
+    fi
+    
+    echo "${pattern}.${ext}"
+}
+
+# Process files and create import plan
+create_import_plan() {
+    local files=()
+    local plan=()
+    
+    log_step "Scanning source directory..."
+    
+    # Find all supported files
+    local all_extensions="${RAW_EXTENSIONS},${IMAGE_EXTENSIONS}"
+    
+    while IFS= read -r file; do
+        [[ -n "$file" ]] && files+=("$file")
+    done < <(find_files_by_extension "$SOURCE_DIR" "$all_extensions")
+    
+    local total=${#files[@]}
+    
+    if [[ $total -eq 0 ]]; then
+        log_warn "No supported files found in $SOURCE_DIR"
+        return 1
+    fi
+    
+    log_info "Found $total files to import"
+    
+    # Sequence counter per date (Bash 3.2 compatible)
+    local date_sequences
+    date_sequences=$(map_init)
+    # shellcheck disable=SC2064  # We want $date_sequences expanded now
+    trap "map_cleanup '$date_sequences'" RETURN
+    
+    log_step "Analyzing files..."
+    
+    local i=0
+    for file in "${files[@]}"; do
+        ((i++))
+        
+        if [[ "$VERBOSE" == "true" ]]; then
+            log_progress "$i" "$total" "Analyzing"
+        fi
+        
+        # Get date from EXIF or fall back to file modification date
+        local date
+        date=$(get_exif_date "$file")
+        
+        if [[ -z "$date" ]]; then
+            # Fall back to file modification date
+            if [[ "$(uname)" == "Darwin" ]]; then
+                date=$(stat -f "%Sm" -t "%Y%m%d" "$file")
+            else
+                date=$(date -r "$file" +%Y%m%d)
+            fi
+        fi
+        
+        # Increment sequence for this date
+        local seq
+        seq=$(map_incr "$date_sequences" "$date")
+        
+        # Generate target path using configurable folder structure
+        local target_dir
+        target_dir=$(get_target_dir "$ARCHIVE_DIR" "$date")
+        
+        local new_name
+        new_name=$(generate_filename "$file" "$seq" "$date")
+        local target_path="${target_dir}/${new_name}"
+        
+        # Store in plan
+        plan+=("$file|$target_path|$date")
+    done
+    
+    echo ""
+    
+    # Output plan
+    printf '%s\n' "${plan[@]}"
+}
+
+# Execute the import
+execute_import() {
+    local plan_file="$1"
+    local total
+    total=$(wc -l < "$plan_file" | tr -d ' ')
+    
+    log_step "Importing $total files..."
+    
+    local success=0
+    local failed=0
+    local i=0
+    
+    while IFS='|' read -r source target date; do
+        ((i++))
+        
+        log_progress "$i" "$total" "Importing"
+        
+        # Create target directory
+        local target_dir
+        target_dir=$(dirname "$target")
+        
+        if [[ "$DRY_RUN" == "true" ]]; then
+            [[ "$VERBOSE" == "true" ]] && log_info "[DRY-RUN] $source -> $target"
+        else
+            mkdir -p "$target_dir"
+            
+            # Copy file with verification
+            if safe_copy "$source" "$target" "true"; then
+                ((success++))
+                [[ "$VERBOSE" == "true" ]] && log_success "Imported: $(basename "$target")"
+            else
+                ((failed++))
+                log_error "Failed: $(basename "$source")"
+            fi
+        fi
+    done < "$plan_file"
+    
+    echo ""
+    
+    if [[ "$DRY_RUN" == "true" ]]; then
+        log_info "[DRY-RUN] Would import $total files"
+    else
+        log_success "Import complete: $success succeeded, $failed failed"
+    fi
+    
+    # shellcheck disable=SC2046  # Return code from subshell
+    return $([[ $failed -eq 0 ]] && echo 0 || echo 1)
+}
+
+# Apply EXIF metadata to imported files
+apply_metadata() {
+    local plan_file="$1"
+    
+    if [[ "$DRY_RUN" == "true" ]]; then
+        log_info "[DRY-RUN] Would apply metadata to imported files"
+        return 0
+    fi
+    
+    log_step "Applying metadata..."
+    
+    # Collect all target files
+    local targets=()
+    while IFS='|' read -r source target date; do
+        [[ -f "$target" ]] && targets+=("$target")
+    done < "$plan_file"
+    
+    if [[ ${#targets[@]} -eq 0 ]]; then
+        log_warn "No files to tag"
+        return 0
+    fi
+    
+    # Build exif arguments
+    local pg_exif="$SCRIPT_DIR/pg-exif"
+    
+    local exif_args=()
+    [[ -n "$AUTHOR" ]] && exif_args+=(--author "$AUTHOR")
+    [[ -n "$DEFAULT_COPYRIGHT" ]] && exif_args+=(--copyright "$DEFAULT_COPYRIGHT")
+    [[ -n "$EVENT" ]] && exif_args+=(--event "$EVENT")
+    [[ -n "$LOCATION" ]] && exif_args+=(--location "$LOCATION")
+    
+    if [[ ${#exif_args[@]} -gt 0 ]]; then
+        # Process in batches for efficiency
+        local batch_size=50
+        local total=${#targets[@]}
+        local i=0
+        
+        while [[ $i -lt $total ]]; do
+            local batch=("${targets[@]:$i:$batch_size}")
+            "$pg_exif" "${exif_args[@]}" "${batch[@]}" >/dev/null 2>&1 || true
+            ((i += batch_size))
+            log_progress $((i < total ? i : total)) "$total" "Tagging"
+        done
+        echo ""
+    fi
+    
+    log_success "Metadata applied"
+}
+
+# Generate checksums for imported files
+generate_checksums() {
+    local plan_file="$1"
+    
+    if [[ "$GENERATE_CHECKSUMS" != "true" ]]; then
+        return 0
+    fi
+    
+    if [[ "$DRY_RUN" == "true" ]]; then
+        log_info "[DRY-RUN] Would generate checksums"
+        return 0
+    fi
+    
+    log_step "Generating checksums..."
+    
+    # Get unique directories
+    local dirs=()
+    while IFS='|' read -r source target date; do
+        local dir
+        dir=$(dirname "$target")
+        # shellcheck disable=SC2076  # We want literal string match, not regex
+        if [[ ! " ${dirs[*]} " =~ " ${dir} " ]]; then
+            dirs+=("$dir")
+        fi
+    done < "$plan_file"
+    
+    for dir in "${dirs[@]}"; do
+        local checksum_file="$dir/.checksums"
+        
+        for file in "$dir"/*; do
+            [[ -f "$file" ]] || continue
+            [[ "$file" == *.checksums ]] && continue
+            
+            local sum
+            sum=$(generate_checksum "$file" "$CHECKSUM_ALGORITHM")
+            local name
+            name=$(basename "$file")
+            
+            echo "$sum  $name" >> "$checksum_file"
+        done
+    done
+    
+    log_success "Checksums generated"
+}
+
+# Offer to delete source files
+cleanup_source() {
+    local plan_file="$1"
+    
+    if [[ "$DRY_RUN" == "true" || "$NO_DELETE" == "true" ]]; then
+        return 0
+    fi
+    
+    if [[ "$CONFIRM_DELETE" == "true" ]]; then
+        echo ""
+        if confirm "Delete source files after successful import?" "n"; then
+            log_step "Deleting source files..."
+            
+            while IFS='|' read -r source target date; do
+                rm -f "$source"
+            done < "$plan_file"
+            
+            log_success "Source files deleted"
+        else
+            log_info "Source files preserved"
+        fi
+    fi
+}
+
+# =============================================================================
+# Main
+# =============================================================================
+
+main() {
+    parse_args "$@"
+    
+    # Validate source directory
+    require_path "$SOURCE_DIR" "dir"
+    
+    # Check dependencies
+    require_command "exiftool"
+    require_venv
+    
+    # Ensure target directories exist
+    ensure_directories
+    
+    log_step "PixelGroomer Import"
+    log_info "Source: $SOURCE_DIR"
+    
+    if [[ "$DRY_RUN" == "true" ]]; then
+        log_warn "DRY-RUN MODE - No changes will be made"
+    fi
+    
+    echo ""
+    
+    # Load configuration (CLI > YAML > interactive)
+    load_import_config
+    
+    log_info "Archive: $ARCHIVE_DIR"
+    log_info "Structure: $FOLDER_STRUCTURE"
+    log_info "Event: ${EVENT:-<none>}"
+    log_info "Location: ${LOCATION:-<none>}"
+    log_info "Author: ${AUTHOR:-<none>}"
+    
+    echo ""
+    
+    # Create import plan
+    local plan_file
+    plan_file=$(mktemp)
+    # shellcheck disable=SC2064  # We want $plan_file expanded now
+    trap "rm -f '$plan_file'" EXIT
+    
+    if ! create_import_plan > "$plan_file"; then
+        exit 1
+    fi
+    
+    local file_count
+    file_count=$(wc -l < "$plan_file" | tr -d ' ')
+    
+    if [[ $file_count -eq 0 ]]; then
+        log_warn "No files to import"
+        exit 0
+    fi
+    
+    # Show preview
+    if [[ "$VERBOSE" == "true" || "$DRY_RUN" == "true" ]]; then
+        echo ""
+        log_info "Import plan preview (first 10 files):"
+        head -10 "$plan_file" | while IFS='|' read -r source target date; do
+            echo "  $(basename "$source") -> $(basename "$target")"
+        done
+        if [[ $file_count -gt 10 ]]; then
+            echo "  ... and $((file_count - 10)) more files"
+        fi
+        echo ""
+    fi
+    
+    # Confirm import
+    if [[ "$DRY_RUN" != "true" ]]; then
+        if ! confirm "Proceed with import of $file_count files?" "y"; then
+            log_info "Import cancelled"
+            exit 0
+        fi
+    fi
+    
+    echo ""
+    
+    # Execute import
+    execute_import "$plan_file"
+    
+    # Apply metadata
+    apply_metadata "$plan_file"
+    
+    # Generate checksums
+    generate_checksums "$plan_file"
+    
+    # Cleanup
+    cleanup_source "$plan_file"
+    
+    echo ""
+    log_success "Import complete!"
+}
+
+main "$@"

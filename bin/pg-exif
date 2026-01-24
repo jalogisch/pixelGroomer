@@ -1,0 +1,352 @@
+#!/usr/bin/env bash
+# PixelGroomer - EXIF Metadata Script
+# Sets EXIF/IPTC/XMP metadata on photos
+
+set -euo pipefail
+
+# Get script directory and load libraries
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=../lib/config.sh disable=SC1091
+source "$SCRIPT_DIR/../lib/config.sh"
+# shellcheck source=../lib/utils.sh disable=SC1091
+source "$SCRIPT_DIR/../lib/utils.sh"
+
+# =============================================================================
+# Script Variables
+# =============================================================================
+
+FILES=()
+AUTHOR=""
+COPYRIGHT=""
+EVENT=""
+LOCATION=""
+GPS=""
+TITLE=""
+DESCRIPTION=""
+KEYWORDS=""
+SHOW_MODE=false
+REMOVE_MODE=false
+VERBOSE=false
+
+# =============================================================================
+# Help
+# =============================================================================
+
+show_help() {
+    cat << EOF
+pg-exif - Manage photo metadata (EXIF/IPTC/XMP)
+
+USAGE:
+    pg-exif <files...> [options]
+    pg-exif <file> --show
+
+ARGUMENTS:
+    <files...>            One or more files or directories to process
+
+OPTIONS:
+    -a, --author <name>   Set Artist/Creator
+    -c, --copyright <text> Set Copyright notice
+    -e, --event <name>    Set Event name
+    -l, --location <loc>  Set Location
+    --gps <lat,lon>       Set GPS coordinates (e.g., "52.52,13.405")
+    -t, --title <text>    Set Title
+    -d, --description <text> Set Description
+    -k, --keywords <k1,k2> Set Keywords (comma-separated)
+    -s, --show            Show metadata (no changes)
+    --remove              Remove all metadata (keeps orientation)
+    -v, --verbose         Show detailed output
+    -h, --help            Show this help message
+
+EXAMPLES:
+    pg-exif photo.jpg --show
+    pg-exif ./photos --author "Max" --event "Wedding"
+    pg-exif *.jpg --copyright "© 2026 Max" --location "Berlin"
+    pg-exif photo.jpg --gps "52.52,13.405"
+
+METADATA FIELDS:
+    Author:      EXIF:Artist, XMP:Creator, IPTC:By-line
+    Copyright:   EXIF:Copyright, XMP:Rights, IPTC:CopyrightNotice
+    Event:       XMP:Event, IPTC:Caption-Abstract
+    Location:    XMP:Location, IPTC:City
+    GPS:         GPSLatitude/Longitude with references
+
+EOF
+}
+
+# =============================================================================
+# Argument Parsing
+# =============================================================================
+
+parse_args() {
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            -a|--author)
+                AUTHOR="$2"
+                shift 2
+                ;;
+            -c|--copyright)
+                COPYRIGHT="$2"
+                shift 2
+                ;;
+            -e|--event)
+                EVENT="$2"
+                shift 2
+                ;;
+            -l|--location)
+                LOCATION="$2"
+                shift 2
+                ;;
+            --gps)
+                GPS="$2"
+                shift 2
+                ;;
+            -t|--title)
+                TITLE="$2"
+                shift 2
+                ;;
+            -d|--description)
+                DESCRIPTION="$2"
+                shift 2
+                ;;
+            -k|--keywords)
+                KEYWORDS="$2"
+                shift 2
+                ;;
+            -s|--show)
+                SHOW_MODE=true
+                shift
+                ;;
+            --remove)
+                REMOVE_MODE=true
+                shift
+                ;;
+            -v|--verbose)
+                # shellcheck disable=SC2034  # VERBOSE used for future detailed output
+                VERBOSE=true
+                shift
+                ;;
+            -h|--help)
+                show_help
+                exit 0
+                ;;
+            -*)
+                log_error "Unknown option: $1"
+                show_help
+                exit 1
+                ;;
+            *)
+                FILES+=("$1")
+                shift
+                ;;
+        esac
+    done
+    
+    if [[ ${#FILES[@]} -eq 0 ]]; then
+        log_error "At least one file or directory is required"
+        show_help
+        exit 1
+    fi
+}
+
+# =============================================================================
+# File Collection
+# =============================================================================
+
+collect_files() {
+    local paths=("$@")
+    local all_files=()
+    local all_extensions="${RAW_EXTENSIONS},${IMAGE_EXTENSIONS}"
+    
+    for path in "${paths[@]}"; do
+        if [[ -f "$path" ]]; then
+            all_files+=("$path")
+        elif [[ -d "$path" ]]; then
+            while IFS= read -r file; do
+                [[ -n "$file" ]] && all_files+=("$file")
+            done < <(find_files_by_extension "$path" "$all_extensions")
+        else
+            log_warn "Path not found: $path"
+        fi
+    done
+    
+    printf '%s\n' "${all_files[@]}"
+}
+
+# =============================================================================
+# Metadata Operations
+# =============================================================================
+
+show_metadata() {
+    local file="$1"
+    
+    run_python_with_lib "
+from exif_utils import ExifTool
+
+exif = ExifTool()
+print(exif.show('$file'))
+"
+}
+
+write_metadata() {
+    local files=("$@")
+    
+    # Build arguments for Python script
+    local py_args=""
+    [[ -n "$AUTHOR" ]] && py_args+="author='$AUTHOR', "
+    [[ -n "$COPYRIGHT" ]] && py_args+="copyright='$COPYRIGHT', "
+    [[ -n "$EVENT" ]] && py_args+="event='$EVENT', "
+    [[ -n "$LOCATION" ]] && py_args+="location='$LOCATION', "
+    [[ -n "$GPS" ]] && py_args+="gps='$GPS', "
+    [[ -n "$TITLE" ]] && py_args+="title='$TITLE', "
+    [[ -n "$DESCRIPTION" ]] && py_args+="description='$DESCRIPTION', "
+    [[ -n "$KEYWORDS" ]] && py_args+="keywords='$KEYWORDS', "
+    
+    if [[ -z "$py_args" ]]; then
+        log_warn "No metadata fields specified"
+        return 0
+    fi
+    
+    # Remove trailing comma and space
+    py_args="${py_args%, }"
+    
+    # Convert bash array to Python list
+    local files_str=""
+    for f in "${files[@]}"; do
+        files_str+="'$f', "
+    done
+    files_str="${files_str%, }"
+    
+    require_venv
+    "${PIXELGROOMER_VENV}/bin/python" << PYEOF
+import sys
+sys.path.insert(0, '${PIXELGROOMER_ROOT}/lib')
+from exif_utils import ExifTool
+
+exif = ExifTool()
+files = [$files_str]
+count = exif.write_batch(files, $py_args)
+print(f"Updated {count} of {len(files)} files")
+PYEOF
+}
+
+remove_metadata() {
+    local file="$1"
+    
+    run_python_with_lib "
+from exif_utils import ExifTool
+
+exif = ExifTool()
+if exif.remove_metadata('$file', keep_orientation=True):
+    print('Metadata removed (orientation preserved)')
+else:
+    import sys
+    print('Failed to remove metadata', file=sys.stderr)
+    sys.exit(1)
+"
+}
+
+# =============================================================================
+# Main
+# =============================================================================
+
+main() {
+    parse_args "$@"
+    
+    # Check dependencies
+    require_command "exiftool"
+    require_venv
+    
+    # Collect all files
+    local all_files=()
+    while IFS= read -r file; do
+        [[ -n "$file" ]] && all_files+=("$file")
+    done < <(collect_files "${FILES[@]}")
+    
+    local total=${#all_files[@]}
+    
+    if [[ $total -eq 0 ]]; then
+        log_warn "No supported files found"
+        exit 0
+    fi
+    
+    # Show mode
+    if [[ "$SHOW_MODE" == "true" ]]; then
+        for file in "${all_files[@]}"; do
+            if [[ $total -gt 1 ]]; then
+                echo ""
+                echo "=== $file ==="
+            fi
+            show_metadata "$file"
+        done
+        exit 0
+    fi
+    
+    # Remove mode
+    if [[ "$REMOVE_MODE" == "true" ]]; then
+        log_step "Removing metadata from $total files..."
+        
+        local success=0
+        local i=0
+        
+        for file in "${all_files[@]}"; do
+            ((i++))
+            log_progress "$i" "$total" "Removing"
+            
+            if remove_metadata "$file" >/dev/null 2>&1; then
+                ((success++))
+            else
+                log_error "Failed: $(basename "$file")"
+            fi
+        done
+        
+        echo ""
+        log_success "Removed metadata from $success of $total files"
+        exit 0
+    fi
+    
+    # Write mode
+    log_step "Updating metadata on $total files..."
+    
+    # Show what will be set
+    [[ -n "$AUTHOR" ]] && log_info "Author: $AUTHOR"
+    [[ -n "$COPYRIGHT" ]] && log_info "Copyright: $COPYRIGHT"
+    [[ -n "$EVENT" ]] && log_info "Event: $EVENT"
+    [[ -n "$LOCATION" ]] && log_info "Location: $LOCATION"
+    [[ -n "$GPS" ]] && log_info "GPS: $GPS"
+    [[ -n "$TITLE" ]] && log_info "Title: $TITLE"
+    [[ -n "$DESCRIPTION" ]] && log_info "Description: $DESCRIPTION"
+    [[ -n "$KEYWORDS" ]] && log_info "Keywords: $KEYWORDS"
+    
+    echo ""
+    
+    # Process in batches for better performance
+    local batch_size=100
+    local i=0
+    local total_updated=0
+    
+    while [[ $i -lt $total ]]; do
+        local batch=("${all_files[@]:$i:$batch_size}")
+        local batch_count=${#batch[@]}
+        
+        # Show progress
+        local end=$((i + batch_count))
+        [[ $end -gt $total ]] && end=$total
+        log_progress "$end" "$total" "Processing"
+        
+        # Write metadata to batch
+        local result
+        result=$(write_metadata "${batch[@]}" 2>/dev/null || echo "Updated 0")
+        
+        # Extract count from result
+        if [[ "$result" =~ Updated\ ([0-9]+) ]]; then
+            total_updated=$((total_updated + BASH_REMATCH[1]))
+        fi
+        
+        ((i += batch_size))
+    done
+    
+    echo ""
+    log_success "Updated metadata on $total_updated files"
+}
+
+main "$@"

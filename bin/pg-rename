@@ -1,0 +1,402 @@
+#!/usr/bin/env bash
+# PixelGroomer - Rename Script
+# Renames photos according to a configurable naming pattern
+
+set -euo pipefail
+
+# Get script directory and load libraries
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=../lib/config.sh disable=SC1091
+source "$SCRIPT_DIR/../lib/config.sh"
+# shellcheck source=../lib/utils.sh disable=SC1091
+source "$SCRIPT_DIR/../lib/utils.sh"
+
+# =============================================================================
+# Script Variables
+# =============================================================================
+
+TARGET_PATH=""
+PATTERN=""
+EVENT=""
+DRY_RUN=false
+RECURSIVE=false
+VERBOSE=false
+
+# =============================================================================
+# Help
+# =============================================================================
+
+show_help() {
+    cat << EOF
+pg-rename - Rename photos according to naming pattern
+
+USAGE:
+    pg-rename <path> [options]
+
+ARGUMENTS:
+    <path>                File or directory to process
+
+OPTIONS:
+    -p, --pattern <pat>   Override naming pattern
+    -e, --event <name>    Event name for {event} placeholder
+    -r, --recursive       Process subdirectories
+    -n, --dry-run         Preview changes without renaming
+    -v, --verbose         Show detailed output
+    -h, --help            Show this help message
+
+PATTERN PLACEHOLDERS:
+    {date}     - YYYYMMDD from EXIF DateTimeOriginal
+    {time}     - HHMMSS from EXIF DateTimeOriginal
+    {event}    - Event name (from --event option)
+    {seq}      - Sequence number (use {seq:03d} for padding)
+    {camera}   - Camera model from EXIF
+    {ext}      - Original file extension
+
+EXAMPLES:
+    pg-rename ./photos --event "Vacation"
+    pg-rename ./photos --pattern "{date}_{event}_{seq:03d}" --dry-run
+    pg-rename photo.jpg --event "Test"
+
+EOF
+}
+
+# =============================================================================
+# Argument Parsing
+# =============================================================================
+
+parse_args() {
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            -p|--pattern)
+                PATTERN="$2"
+                shift 2
+                ;;
+            -e|--event)
+                EVENT="$2"
+                shift 2
+                ;;
+            -r|--recursive)
+                RECURSIVE=true
+                shift
+                ;;
+            -n|--dry-run)
+                DRY_RUN=true
+                shift
+                ;;
+            -v|--verbose)
+                VERBOSE=true
+                shift
+                ;;
+            -h|--help)
+                show_help
+                exit 0
+                ;;
+            -*)
+                log_error "Unknown option: $1"
+                show_help
+                exit 1
+                ;;
+            *)
+                if [[ -z "$TARGET_PATH" ]]; then
+                    TARGET_PATH="$1"
+                else
+                    log_error "Unexpected argument: $1"
+                    exit 1
+                fi
+                shift
+                ;;
+        esac
+    done
+    
+    if [[ -z "$TARGET_PATH" ]]; then
+        log_error "Path is required"
+        show_help
+        exit 1
+    fi
+    
+    # Use default pattern if not specified
+    [[ -z "$PATTERN" ]] && PATTERN="$NAMING_PATTERN"
+}
+
+# =============================================================================
+# File Processing
+# =============================================================================
+
+# Get EXIF date and time from file
+get_exif_datetime() {
+    local file="$1"
+    
+    run_python_with_lib "
+from exif_utils import ExifTool
+
+exif = ExifTool()
+dt = exif.read_date('$file')
+if dt:
+    print(dt.strftime('%Y%m%d|%H%M%S'))
+else:
+    print('|')
+" 2>/dev/null || echo "|"
+}
+
+# Get camera model from file
+get_camera_model() {
+    local file="$1"
+    
+    run_python_with_lib "
+import re
+from exif_utils import ExifTool
+
+exif = ExifTool()
+camera = exif.read_camera('$file')
+if camera:
+    camera = re.sub(r'[^a-zA-Z0-9]', '', camera)
+    print(camera[:20])
+else:
+    print('')
+" 2>/dev/null || echo ""
+}
+
+# Generate new filename based on pattern
+generate_new_name() {
+    local file="$1"
+    local sequence="$2"
+    
+    local ext
+    ext=$(get_extension "$file")
+    
+    local pattern="$PATTERN"
+    
+    # Get date and time
+    local datetime
+    datetime=$(get_exif_datetime "$file")
+    local date="${datetime%%|*}"
+    local time="${datetime##*|}"
+    
+    # Fall back to file date if no EXIF
+    if [[ -z "$date" ]]; then
+        if [[ "$(uname)" == "Darwin" ]]; then
+            date=$(stat -f "%Sm" -t "%Y%m%d" "$file")
+            time=$(stat -f "%Sm" -t "%H%M%S" "$file")
+        else
+            date=$(date -r "$file" +%Y%m%d)
+            time=$(date -r "$file" +%H%M%S)
+        fi
+    fi
+    
+    [[ -z "$time" ]] && time="000000"
+    
+    # Replace placeholders
+    pattern="${pattern//\{date\}/$date}"
+    pattern="${pattern//\{time\}/$time}"
+    pattern="${pattern//\{event\}/$EVENT}"
+    
+    # Handle sequence with padding
+    if [[ "$pattern" =~ \{seq:([0-9]+)d\} ]]; then
+        local padding="${BASH_REMATCH[1]}"
+        local padded_seq
+        padded_seq=$(pad_number "$sequence" "$padding")
+        pattern="${pattern//\{seq:${padding}d\}/$padded_seq}"
+    else
+        pattern="${pattern//\{seq\}/$sequence}"
+    fi
+    
+    # Camera model
+    if [[ "$pattern" == *"{camera}"* ]]; then
+        local camera
+        camera=$(get_camera_model "$file")
+        [[ -z "$camera" ]] && camera="Unknown"
+        pattern="${pattern//\{camera\}/$camera}"
+    fi
+    
+    echo "${pattern}.${ext}"
+}
+
+# Collect files to process
+collect_files() {
+    local path="$1"
+    local files=()
+    
+    local all_extensions="${RAW_EXTENSIONS},${IMAGE_EXTENSIONS}"
+    
+    if [[ -f "$path" ]]; then
+        # Single file
+        if is_supported_file "$path"; then
+            echo "$path"
+        fi
+    elif [[ -d "$path" ]]; then
+        # Directory
+        if [[ "$RECURSIVE" == "true" ]]; then
+            find_files_by_extension "$path" "$all_extensions"
+        else
+            # Non-recursive: only files in this directory
+            for file in "$path"/*; do
+                [[ -f "$file" ]] && is_supported_file "$file" && echo "$file"
+            done
+        fi
+    fi
+}
+
+# =============================================================================
+# Main
+# =============================================================================
+
+main() {
+    parse_args "$@"
+    
+    # Validate path
+    require_path "$TARGET_PATH"
+    
+    # Prompt for event if pattern uses it but not provided
+    if [[ "$PATTERN" == *"{event}"* && -z "$EVENT" ]]; then
+        log_info "Pattern uses {event} placeholder but no event specified"
+        EVENT=$(prompt_input "Enter event name" "" "EVENT")
+        EVENT=$(sanitize_filename "$EVENT")
+    fi
+    
+    log_step "PixelGroomer Rename"
+    log_info "Path: $TARGET_PATH"
+    log_info "Pattern: $PATTERN"
+    [[ -n "$EVENT" ]] && log_info "Event: $EVENT"
+    
+    if [[ "$DRY_RUN" == "true" ]]; then
+        log_warn "DRY-RUN MODE - No changes will be made"
+    fi
+    
+    echo ""
+    
+    # Collect files
+    log_step "Scanning files..."
+    
+    local files=()
+    while IFS= read -r file; do
+        [[ -n "$file" ]] && files+=("$file")
+    done < <(collect_files "$TARGET_PATH")
+    
+    local total=${#files[@]}
+    
+    if [[ $total -eq 0 ]]; then
+        log_warn "No supported files found"
+        exit 0
+    fi
+    
+    log_info "Found $total files"
+    echo ""
+    
+    # Sequence counter per directory (Bash 3.2 compatible)
+    local dir_sequences
+    dir_sequences=$(map_init)
+    # shellcheck disable=SC2064  # We want $dir_sequences expanded now
+    trap "map_cleanup '$dir_sequences'" RETURN
+    
+    declare -a rename_plan
+    
+    for file in "${files[@]}"; do
+        local dir
+        dir=$(dirname "$file")
+        
+        # Increment sequence for this directory
+        local seq
+        seq=$(map_incr "$dir_sequences" "$dir")
+        
+        # Generate new name
+        local new_name
+        new_name=$(generate_new_name "$file" "$seq")
+        local new_path="${dir}/${new_name}"
+        
+        rename_plan+=("$file|$new_path")
+    done
+    
+    # Preview changes
+    log_step "Rename plan:"
+    local i=0
+    for entry in "${rename_plan[@]}"; do
+        local old_file="${entry%%|*}"
+        local new_file="${entry##*|}"
+        local old_name
+        old_name=$(basename "$old_file")
+        local new_name
+        new_name=$(basename "$new_file")
+        
+        if [[ "$old_name" != "$new_name" ]]; then
+            echo "  $old_name -> $new_name"
+            ((i++))
+            [[ $i -ge 20 && "$VERBOSE" != "true" ]] && break
+        fi
+    done
+    
+    if [[ $i -ge 20 && "$VERBOSE" != "true" ]]; then
+        echo "  ... and more (use --verbose to see all)"
+    fi
+    
+    echo ""
+    
+    # Count actual renames needed
+    local rename_count=0
+    for entry in "${rename_plan[@]}"; do
+        local old_file="${entry%%|*}"
+        local new_file="${entry##*|}"
+        [[ "$old_file" != "$new_file" ]] && ((rename_count++))
+    done
+    
+    if [[ $rename_count -eq 0 ]]; then
+        log_info "No files need renaming"
+        exit 0
+    fi
+    
+    # Confirm
+    if [[ "$DRY_RUN" != "true" ]]; then
+        if ! confirm "Rename $rename_count files?" "y"; then
+            log_info "Rename cancelled"
+            exit 0
+        fi
+        echo ""
+    fi
+    
+    # Execute renames
+    log_step "Renaming files..."
+    
+    local success=0
+    local failed=0
+    local skipped=0
+    
+    for entry in "${rename_plan[@]}"; do
+        local old_file="${entry%%|*}"
+        local new_file="${entry##*|}"
+        
+        # Skip if same name
+        if [[ "$old_file" == "$new_file" ]]; then
+            ((skipped++))
+            continue
+        fi
+        
+        if [[ "$DRY_RUN" == "true" ]]; then
+            [[ "$VERBOSE" == "true" ]] && log_info "[DRY-RUN] $(basename "$old_file") -> $(basename "$new_file")"
+            ((success++))
+        else
+            # Handle conflicts
+            if [[ -e "$new_file" ]]; then
+                log_warn "Conflict: $new_file already exists, skipping"
+                ((failed++))
+                continue
+            fi
+            
+            if mv "$old_file" "$new_file"; then
+                ((success++))
+                [[ "$VERBOSE" == "true" ]] && log_success "Renamed: $(basename "$new_file")"
+            else
+                ((failed++))
+                log_error "Failed: $(basename "$old_file")"
+            fi
+        fi
+    done
+    
+    echo ""
+    
+    if [[ "$DRY_RUN" == "true" ]]; then
+        log_info "[DRY-RUN] Would rename $success files"
+    else
+        log_success "Rename complete: $success succeeded, $failed failed, $skipped unchanged"
+    fi
+}
+
+main "$@"

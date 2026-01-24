@@ -1,0 +1,51 @@
+# PixelGroomer Import Configuration
+# =================================
+# Place this file on your SD card at one of these locations:
+#   - /DCIM/.import.yaml
+#   - /.import.yaml
+#
+# Configuration Priority (lowest to highest):
+#   1. This file (.import.yaml on SD card)
+#   2. ~/.config/pixelgroomer/.env or project .env
+#   3. CLI arguments (always win)
+#
+# Values in .env will override these defaults.
+# CLI arguments will override both.
+
+# Event name (required for naming pattern)
+# Used in filename: YYYYMMDD_{event}_001.jpg
+event: "Hochzeit Meyer"
+
+# Location for EXIF metadata
+# Sets XMP:Location and IPTC:City
+location: "Berlin, Germany"
+
+# Override the default author (optional)
+# If not set, uses DEFAULT_AUTHOR from .env
+# author: "Max Mustermann"
+
+# Keywords/tags for the photos (optional)
+# Sets XMP:Subject and IPTC:Keywords
+tags:
+  - wedding
+  - family
+  - outdoor
+
+# Notes about this import (optional)
+# Not written to files, just for reference
+notes: "Day 1 of the wedding, ceremony and reception"
+
+# =================================
+# Advanced Options (optional)
+# =================================
+
+# Target archive directory for this import
+# Will be overridden by .env PHOTO_LIBRARY or CLI --output
+# archive: "/Volumes/PhotoArchive/Photos"
+
+# Override naming pattern for this import only
+# pattern: "{date}_{time}_{event}_{seq:03d}"
+
+# GPS coordinates (lat,lon) to apply to all photos
+# Useful if your camera doesn't have GPS
+# gps: "52.5200,13.4050"

@@ -1,0 +1,402 @@
+#!/usr/bin/env bash
+# PixelGroomer - RAW Development Script
+# Develops RAW files to JPG using darktable-cli or ImageMagick
+
+set -euo pipefail
+
+# Get script directory and load libraries
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=../lib/config.sh disable=SC1091
+source "$SCRIPT_DIR/../lib/config.sh"
+# shellcheck source=../lib/utils.sh disable=SC1091
+source "$SCRIPT_DIR/../lib/utils.sh"
+
+# =============================================================================
+# Script Variables
+# =============================================================================
+
+FILES=()
+OUTPUT_DIR=""
+PROCESSOR=""
+PRESET=""
+QUALITY=""
+RESIZE=""
+DRY_RUN=false
+VERBOSE=false
+OVERWRITE=false
+
+# =============================================================================
+# Help
+# =============================================================================
+
+show_help() {
+    cat << EOF
+pg-develop - Develop RAW files to JPG
+
+USAGE:
+    pg-develop <files...> [options]
+
+ARGUMENTS:
+    <files...>            RAW files or directories to process
+
+OPTIONS:
+    -o, --output <dir>    Output directory (default: same as source or EXPORT_DIR)
+    -p, --preset <name>   Darktable style/preset name
+    -q, --quality <1-100> JPEG quality (default: $JPEG_QUALITY)
+    --processor <name>    Force processor: darktable or imagemagick
+    --resize <WxH>        Resize output (e.g., 1920x1080, 1920x, x1080)
+    --overwrite           Overwrite existing files
+    -n, --dry-run         Preview without processing
+    -v, --verbose         Show detailed output
+    -h, --help            Show this help message
+
+PROCESSORS:
+    darktable     High-quality RAW processing, supports XMP sidecars and presets
+    imagemagick   Faster but simpler processing, uses dcraw internally
+
+EXAMPLES:
+    pg-develop photo.cr3
+    pg-develop ./raw_photos --output ./jpgs --preset "vivid"
+    pg-develop *.cr3 --processor darktable --quality 95
+    pg-develop ./photos --resize 1920x --output ./web
+
+PRESETS (darktable):
+    Presets/styles should be installed in darktable first.
+    List available styles: darktable-cli --help
+
+XMP SIDECARS:
+    If a .xmp sidecar file exists next to the RAW file, darktable will
+    use it for development settings.
+
+EOF
+}
+
+# =============================================================================
+# Argument Parsing
+# =============================================================================
+
+parse_args() {
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            -o|--output)
+                OUTPUT_DIR="$2"
+                shift 2
+                ;;
+            -p|--preset)
+                PRESET="$2"
+                shift 2
+                ;;
+            -q|--quality)
+                QUALITY="$2"
+                shift 2
+                ;;
+            --processor)
+                PROCESSOR="$2"
+                shift 2
+                ;;
+            --resize)
+                RESIZE="$2"
+                shift 2
+                ;;
+            --overwrite)
+                OVERWRITE=true
+                shift
+                ;;
+            -n|--dry-run)
+                DRY_RUN=true
+                shift
+                ;;
+            -v|--verbose)
+                VERBOSE=true
+                shift
+                ;;
+            -h|--help)
+                show_help
+                exit 0
+                ;;
+            -*)
+                log_error "Unknown option: $1"
+                show_help
+                exit 1
+                ;;
+            *)
+                FILES+=("$1")
+                shift
+                ;;
+        esac
+    done
+    
+    if [[ ${#FILES[@]} -eq 0 ]]; then
+        log_error "At least one file or directory is required"
+        show_help
+        exit 1
+    fi
+    
+    # Set defaults
+    [[ -z "$PROCESSOR" ]] && PROCESSOR="$RAW_PROCESSOR"
+    [[ -z "$QUALITY" ]] && QUALITY="$JPEG_QUALITY"
+    [[ -z "$PRESET" ]] && PRESET="$DARKTABLE_STYLE"
+}
+
+# =============================================================================
+# Processor Detection
+# =============================================================================
+
+detect_processor() {
+    if [[ "$PROCESSOR" == "darktable" ]]; then
+        if command -v darktable-cli &>/dev/null; then
+            echo "darktable"
+        else
+            log_warn "darktable-cli not found, falling back to imagemagick"
+            echo "imagemagick"
+        fi
+    else
+        echo "imagemagick"
+    fi
+}
+
+check_processor() {
+    local proc="$1"
+    
+    case "$proc" in
+        darktable)
+            require_command "darktable-cli" "darktable"
+            ;;
+        imagemagick)
+            require_command "convert" "imagemagick"
+            ;;
+        *)
+            log_error "Unknown processor: $proc"
+            exit 1
+            ;;
+    esac
+}
+
+# =============================================================================
+# File Collection
+# =============================================================================
+
+collect_raw_files() {
+    local paths=("$@")
+    
+    for path in "${paths[@]}"; do
+        if [[ -f "$path" ]]; then
+            # Single file - check if it's a RAW
+            local ext
+            ext=$(get_extension "$path")
+            if is_raw_extension "$ext"; then
+                echo "$path"
+            else
+                log_warn "Not a RAW file: $path"
+            fi
+        elif [[ -d "$path" ]]; then
+            # Directory - find all RAW files
+            find_files_by_extension "$path" "$RAW_EXTENSIONS"
+        else
+            log_warn "Path not found: $path"
+        fi
+    done
+}
+
+# =============================================================================
+# Development Functions
+# =============================================================================
+
+# Develop with darktable-cli
+develop_darktable() {
+    local input="$1"
+    local output="$2"
+    
+    local args=()
+    
+    # Check for XMP sidecar
+    local xmp_file="${input%.*}.xmp"
+    if [[ -f "$xmp_file" ]]; then
+        [[ "$VERBOSE" == "true" ]] && log_info "Using XMP sidecar: $(basename "$xmp_file")"
+        # darktable-cli automatically picks up XMP sidecars
+    fi
+    
+    # Add preset/style if specified
+    if [[ -n "$PRESET" ]]; then
+        args+=(--style "$PRESET")
+    fi
+    
+    # Build command
+    # Note: darktable-cli output quality is set via export options
+    local cmd=(darktable-cli "$input" "$output" "${args[@]}")
+    
+    if [[ "$DRY_RUN" == "true" ]]; then
+        [[ "$VERBOSE" == "true" ]] && log_info "[DRY-RUN] ${cmd[*]}"
+        return 0
+    fi
+    
+    # Run darktable-cli
+    if "${cmd[@]}" &>/dev/null; then
+        # Apply resize if needed (darktable doesn't have built-in resize in CLI)
+        if [[ -n "$RESIZE" && -f "$output" ]]; then
+            convert "$output" -resize "$RESIZE" -quality "$QUALITY" "$output"
+        fi
+        return 0
+    else
+        return 1
+    fi
+}
+
+# Develop with ImageMagick
+develop_imagemagick() {
+    local input="$1"
+    local output="$2"
+    
+    local args=(-quality "$QUALITY")
+    
+    # Add resize if specified
+    if [[ -n "$RESIZE" ]]; then
+        args+=(-resize "$RESIZE")
+    fi
+    
+    # Auto-orient based on EXIF
+    args+=(-auto-orient)
+    
+    local cmd=(convert "$input" "${args[@]}" "$output")
+    
+    if [[ "$DRY_RUN" == "true" ]]; then
+        [[ "$VERBOSE" == "true" ]] && log_info "[DRY-RUN] ${cmd[*]}"
+        return 0
+    fi
+    
+    if "${cmd[@]}" 2>/dev/null; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+# Main development function
+develop_file() {
+    local input="$1"
+    local output="$2"
+    local processor="$3"
+    
+    case "$processor" in
+        darktable)
+            develop_darktable "$input" "$output"
+            ;;
+        imagemagick)
+            develop_imagemagick "$input" "$output"
+            ;;
+    esac
+}
+
+# =============================================================================
+# Main
+# =============================================================================
+
+main() {
+    parse_args "$@"
+    
+    # Detect and check processor
+    local processor
+    processor=$(detect_processor)
+    check_processor "$processor"
+    
+    log_step "PixelGroomer RAW Development"
+    log_info "Processor: $processor"
+    log_info "Quality: $QUALITY"
+    [[ -n "$PRESET" ]] && log_info "Preset: $PRESET"
+    [[ -n "$RESIZE" ]] && log_info "Resize: $RESIZE"
+    
+    if [[ "$DRY_RUN" == "true" ]]; then
+        log_warn "DRY-RUN MODE - No files will be created"
+    fi
+    
+    echo ""
+    
+    # Collect RAW files
+    log_step "Scanning for RAW files..."
+    
+    local raw_files=()
+    while IFS= read -r file; do
+        [[ -n "$file" ]] && raw_files+=("$file")
+    done < <(collect_raw_files "${FILES[@]}")
+    
+    local total=${#raw_files[@]}
+    
+    if [[ $total -eq 0 ]]; then
+        log_warn "No RAW files found"
+        exit 0
+    fi
+    
+    log_info "Found $total RAW files"
+    echo ""
+    
+    # Determine output directory
+    local out_dir="$OUTPUT_DIR"
+    if [[ -z "$out_dir" ]]; then
+        # If single file, use same directory
+        # If directory, use EXPORT_DIR
+        if [[ ${#FILES[@]} -eq 1 && -f "${FILES[0]}" ]]; then
+            out_dir=$(dirname "${FILES[0]}")
+        else
+            out_dir="$EXPORT_DIR"
+        fi
+    fi
+    
+    # Create output directory
+    if [[ "$DRY_RUN" != "true" ]]; then
+        mkdir -p "$out_dir"
+    fi
+    
+    log_info "Output: $out_dir"
+    echo ""
+    
+    # Process files
+    log_step "Developing RAW files..."
+    
+    local success=0
+    local skipped=0
+    local failed=0
+    local i=0
+    
+    for raw_file in "${raw_files[@]}"; do
+        ((i++))
+        
+        local filename
+        filename=$(basename "$raw_file")
+        local basename
+        basename=$(get_basename "$filename")
+        local output_file="${out_dir}/${basename}.jpg"
+        
+        log_progress "$i" "$total" "Processing"
+        
+        # Check if output exists
+        if [[ -f "$output_file" && "$OVERWRITE" != "true" && "$DRY_RUN" != "true" ]]; then
+            [[ "$VERBOSE" == "true" ]] && log_info "Skipping (exists): $basename.jpg"
+            ((skipped++))
+            continue
+        fi
+        
+        # Develop
+        if develop_file "$raw_file" "$output_file" "$processor"; then
+            ((success++))
+            [[ "$VERBOSE" == "true" ]] && log_success "Developed: $basename.jpg"
+        else
+            ((failed++))
+            log_error "Failed: $filename"
+        fi
+    done
+    
+    echo ""
+    echo ""
+    
+    if [[ "$DRY_RUN" == "true" ]]; then
+        log_info "[DRY-RUN] Would develop $total files"
+    else
+        log_success "Development complete!"
+        log_info "  Successful: $success"
+        [[ $skipped -gt 0 ]] && log_info "  Skipped: $skipped"
+        [[ $failed -gt 0 ]] && log_warn "  Failed: $failed"
+        log_info "  Output: $out_dir"
+    fi
+}
+
+main "$@"

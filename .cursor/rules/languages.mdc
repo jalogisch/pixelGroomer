@@ -1,0 +1,85 @@
+---
+description: Language constraints - Bash and Python only
+alwaysApply: true
+---
+
+# Language Constraints
+
+This project uses only two languages:
+
+1. **Bash** - For scripts and orchestration
+2. **Python** - For complex logic (EXIF, YAML parsing, JSON handling)
+
+## Bash Requirements
+
+- All scripts in `bin/` and `lib/` are Bash
+- Must be compatible with Bash 3.2 (see `bash-compatibility.mdc`)
+- Must pass ShellCheck validation (see `shellcheck.mdc`)
+
+## Python Requirements
+
+**Python must always run inside the project's virtual environment.**
+
+### For Scripts
+
+Scripts must use the venv helpers from `lib/venv.sh`:
+
+```bash
+source "$SCRIPT_DIR/../lib/venv.sh"
+
+# Check venv exists (exits with error if not)
+require_venv
+
+# Run inline Python code
+run_python "print('hello')"
+
+# Run Python with access to lib/ modules
+run_python_with_lib "from exif_utils import ExifTool; print(ExifTool)"
+
+# Get path to venv Python for heredocs
+$(get_python) << 'PYEOF'
+import sys
+print(sys.executable)
+PYEOF
+```
+
+### Never Use
+
+```bash
+# ❌ Direct python3 calls bypass venv
+python3 -c "..."
+python3 script.py
+
+# ❌ System Python
+/usr/bin/python3
+```
+
+### Setup
+
+The virtual environment is created by `setup.sh`:
+
+```bash
+./setup.sh  # Creates .venv/ and installs dependencies
+```
+
+If venv is missing, scripts will show:
+
+```
+[ERROR] Python virtual environment not found!
+
+Please run the setup script first:
+
+    /path/to/pixelGroomer/setup.sh
+```
+
+## No Other Languages
+
+Do not introduce:
+- Node.js / JavaScript
+- Ruby
+- Perl
+- Go
+- Rust
+- etc.
+
+Keep the toolset simple: Bash + Python only.

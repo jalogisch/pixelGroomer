@@ -1,0 +1,188 @@
+#!/usr/bin/env bash
+# PixelGroomer - RAW Processor Comparison Test
+# Compares darktable-cli and ImageMagick for RAW development
+
+set -euo pipefail
+
+# Get script directory and load libraries
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=../lib/config.sh disable=SC1091
+source "$SCRIPT_DIR/../lib/config.sh"
+# shellcheck source=../lib/utils.sh disable=SC1091
+source "$SCRIPT_DIR/../lib/utils.sh"
+
+# =============================================================================
+# Help
+# =============================================================================
+
+show_help() {
+    cat << EOF
+pg-test-processors - Compare RAW processors
+
+USAGE:
+    pg-test-processors <raw-file>
+
+DESCRIPTION:
+    Develops the same RAW file with both darktable-cli and ImageMagick,
+    then compares file size, processing time, and opens both for visual
+    comparison.
+
+EXAMPLE:
+    pg-test-processors photo.cr3
+
+OUTPUT:
+    Creates two files in the same directory:
+    - <filename>_darktable.jpg
+    - <filename>_imagemagick.jpg
+
+EOF
+}
+
+# =============================================================================
+# Main
+# =============================================================================
+
+main() {
+    if [[ $# -eq 0 || "$1" == "-h" || "$1" == "--help" ]]; then
+        show_help
+        exit 0
+    fi
+    
+    local raw_file="$1"
+    
+    require_path "$raw_file" "file"
+    
+    local ext
+    ext=$(get_extension "$raw_file")
+    if ! is_raw_extension "$ext"; then
+        log_error "Not a RAW file: $raw_file"
+        exit 1
+    fi
+    
+    local dir
+    dir=$(dirname "$raw_file")
+    local basename
+    basename=$(get_basename "$raw_file")
+    
+    local dt_output="${dir}/${basename}_darktable.jpg"
+    local im_output="${dir}/${basename}_imagemagick.jpg"
+    
+    log_step "RAW Processor Comparison Test"
+    log_info "Input: $raw_file"
+    echo ""
+    
+    # Check available processors
+    local has_darktable=false
+    local has_imagemagick=false
+    
+    if command -v darktable-cli &>/dev/null; then
+        has_darktable=true
+        log_success "darktable-cli: Available"
+    else
+        log_warn "darktable-cli: Not installed"
+    fi
+    
+    if command -v convert &>/dev/null; then
+        has_imagemagick=true
+        log_success "ImageMagick: Available"
+    else
+        log_warn "ImageMagick: Not installed"
+    fi
+    
+    echo ""
+    
+    if [[ "$has_darktable" == "false" && "$has_imagemagick" == "false" ]]; then
+        log_error "No RAW processors available"
+        log_info "Install with: brew install darktable imagemagick"
+        exit 1
+    fi
+    
+    # Test darktable
+    if [[ "$has_darktable" == "true" ]]; then
+        log_step "Testing darktable-cli..."
+        
+        local dt_start dt_end dt_time
+        dt_start=$(date +%s.%N)
+        
+        if darktable-cli "$raw_file" "$dt_output" &>/dev/null; then
+            dt_end=$(date +%s.%N)
+            dt_time=$(echo "$dt_end - $dt_start" | bc)
+            
+            local dt_size
+            if [[ "$(uname)" == "Darwin" ]]; then
+                dt_size=$(stat -f "%z" "$dt_output")
+            else
+                dt_size=$(stat --printf="%s" "$dt_output")
+            fi
+            dt_size_mb=$(echo "scale=2; $dt_size / 1048576" | bc)
+            
+            log_success "darktable: ${dt_time}s, ${dt_size_mb} MB"
+        else
+            log_error "darktable failed"
+        fi
+    fi
+    
+    # Test ImageMagick
+    if [[ "$has_imagemagick" == "true" ]]; then
+        log_step "Testing ImageMagick..."
+        
+        local im_start im_end im_time
+        im_start=$(date +%s.%N)
+        
+        if convert "$raw_file" -quality "$JPEG_QUALITY" -auto-orient "$im_output" 2>/dev/null; then
+            im_end=$(date +%s.%N)
+            im_time=$(echo "$im_end - $im_start" | bc)
+            
+            local im_size
+            if [[ "$(uname)" == "Darwin" ]]; then
+                im_size=$(stat -f "%z" "$im_output")
+            else
+                im_size=$(stat --printf="%s" "$im_output")
+            fi
+            im_size_mb=$(echo "scale=2; $im_size / 1048576" | bc)
+            
+            log_success "ImageMagick: ${im_time}s, ${im_size_mb} MB"
+        else
+            log_error "ImageMagick failed"
+        fi
+    fi
+    
+    echo ""
+    log_step "Results"
+    echo ""
+    
+    # Summary table
+    printf "%-15s %-12s %-12s\n" "Processor" "Time" "Size"
+    printf "%-15s %-12s %-12s\n" "---------" "----" "----"
+    
+    if [[ -f "$dt_output" ]]; then
+        printf "%-15s %-12s %-12s\n" "darktable" "${dt_time}s" "${dt_size_mb} MB"
+    fi
+    
+    if [[ -f "$im_output" ]]; then
+        printf "%-15s %-12s %-12s\n" "ImageMagick" "${im_time}s" "${im_size_mb} MB"
+    fi
+    
+    echo ""
+    log_info "Output files:"
+    [[ -f "$dt_output" ]] && echo "  - $dt_output"
+    [[ -f "$im_output" ]] && echo "  - $im_output"
+    
+    echo ""
+    
+    # Offer to open for comparison
+    if [[ "$(uname)" == "Darwin" ]]; then
+        if confirm "Open both images for visual comparison?" "y"; then
+            [[ -f "$dt_output" ]] && open "$dt_output"
+            [[ -f "$im_output" ]] && open "$im_output"
+        fi
+    else
+        log_info "Open the output files in your image viewer to compare quality."
+    fi
+    
+    echo ""
+    log_info "To set your preferred processor, edit .env:"
+    echo "  RAW_PROCESSOR=\"darktable\"   # or \"imagemagick\""
+}
+
+main "$@"

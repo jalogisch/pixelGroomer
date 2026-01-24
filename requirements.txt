@@ -1,0 +1,2 @@
+# PixelGroomer Python Dependencies
+PyYAML>=6.0
