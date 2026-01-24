@@ -1,0 +1,47 @@
+{% if steps %}
+<div class="workflow-steps">
+  {% for step in steps %}
+  <div class="workflow-step">
+    <div class="card step-card">
+      <div class="card-header">
+        <div class="flex items-center gap-2">
+          <span class="step-number">{{ step.id }}</span>
+          <span class="card-title">{{ step.module_name }}</span>
+        </div>
+        <div class="step-actions">
+          <button class="btn btn-small btn-secondary"
+                  hx-delete="{{ url_for('api.remove_workflow_step', step_id=step.id) }}"
+                  hx-target="#workflow-steps"
+                  hx-swap="innerHTML"
+                  hx-confirm="Remove this step?">
+            Remove
+          </button>
+        </div>
+      </div>
+      <div class="card-body">
+        {% if step.params %}
+        <div class="text-small">
+          {% for key, value in step.params.items() %}
+            {% if value %}
+            <div class="flex gap-2">
+              <span class="text-subdued">{{ key }}:</span>
+              <span>{{ value }}</span>
+            </div>
+            {% endif %}
+          {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-subdued text-small">No parameters configured.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="panel">
+  <p class="text-subdued text-center">
+    No steps added yet. Select a module above to add steps to your workflow.
+  </p>
+</div>
+{% endif %}

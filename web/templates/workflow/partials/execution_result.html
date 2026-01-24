@@ -1,0 +1,44 @@
+{% if result.dry_run %}
+<div class="alert alert-warning">
+  <strong>Dry Run</strong> - No changes were made.
+</div>
+{% endif %}
+
+{% if result.success %}
+<div class="alert alert-success">
+  <strong>Success!</strong> Workflow completed.
+</div>
+{% else %}
+<div class="alert alert-danger">
+  <strong>Failed</strong>
+  {% if result.errors %}
+  <ul class="mt-2" style="margin: 0; padding-left: 1.25rem;">
+    {% for error in result.errors %}
+    <li>{{ error }}</li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+</div>
+{% endif %}
+
+{% if result.steps %}
+<div class="mt-3">
+  <h4 class="text-small mb-2">Step Results:</h4>
+  {% for step in result.steps %}
+  <div class="panel mb-2">
+    <div class="flex justify-between items-center">
+      <span>{{ step.step_id }}. {{ step.module_name }}</span>
+      <span class="{% if step.status == 'success' %}text-success{% elif step.status == 'error' %}text-danger{% else %}text-subdued{% endif %}">
+        {{ step.status }}
+      </span>
+    </div>
+    {% if step.command %}
+    <pre class="text-small mt-1" style="background: var(--color-background-dark); padding: 0.5rem; border-radius: 4px; overflow-x: auto;">{{ step.command }}</pre>
+    {% endif %}
+    {% if step.error %}
+    <p class="text-small text-danger mt-1">{{ step.error }}</p>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% endif %}

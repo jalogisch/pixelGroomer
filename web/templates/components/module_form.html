@@ -1,0 +1,82 @@
+{# Module form for workflow step configuration #}
+{% set module = module if module is defined else (modules[0] if modules else none) %}
+{% set step_id = step_id if step_id is defined else 0 %}
+{% set params = params if params is defined else {} %}
+
+{% if module %}
+<form hx-post="{{ url_for('api.add_workflow_step') }}"
+      hx-target="#workflow-steps"
+      hx-swap="innerHTML">
+  <input type="hidden" name="module_id" value="{{ module.id }}">
+  
+  <p class="text-subdued text-small mb-3">{{ module.description }}</p>
+  
+  {% for param in module.parameters %}
+  <div class="form-group">
+    <label class="form-label" for="param-{{ param.id }}">
+      {{ param.label }}
+      {% if param.required %}<span class="text-danger">*</span>{% endif %}
+    </label>
+    
+    {% if param.type == 'select' %}
+    <select class="form-select" 
+            id="param-{{ param.id }}" 
+            name="{{ param.id }}"
+            {% if param.required %}required{% endif %}>
+      {% for option in param.options %}
+      <option value="{{ option.value }}" 
+              {% if params.get(param.id, param.default) == option.value %}selected{% endif %}>
+        {{ option.label }}
+      </option>
+      {% endfor %}
+    </select>
+    
+    {% elif param.type == 'boolean' %}
+    <div class="form-checkbox">
+      <input type="checkbox" 
+             id="param-{{ param.id }}" 
+             name="{{ param.id }}"
+             value="true"
+             {% if params.get(param.id, param.default) in [true, 'true', '1', 'yes'] %}checked{% endif %}>
+      <label for="param-{{ param.id }}">Enable</label>
+    </div>
+    
+    {% elif param.type == 'textarea' %}
+    <textarea class="form-textarea"
+              id="param-{{ param.id }}"
+              name="{{ param.id }}"
+              rows="3"
+              placeholder="{{ param.placeholder or '' }}"
+              {% if param.required %}required{% endif %}>{{ params.get(param.id, param.default or '') }}</textarea>
+    
+    {% elif param.type == 'number' %}
+    <input type="number"
+           class="form-input"
+           id="param-{{ param.id }}"
+           name="{{ param.id }}"
+           value="{{ params.get(param.id, param.default or '') }}"
+           placeholder="{{ param.placeholder or '' }}"
+           {% if param.min is defined %}min="{{ param.min }}"{% endif %}
+           {% if param.max is defined %}max="{{ param.max }}"{% endif %}
+           {% if param.required %}required{% endif %}>
+    
+    {% else %}
+    {# Default: text input (also used for path type) #}
+    <input type="text"
+           class="form-input"
+           id="param-{{ param.id }}"
+           name="{{ param.id }}"
+           value="{{ params.get(param.id, param.default or '') }}"
+           placeholder="{{ param.placeholder or '' }}"
+           {% if param.required %}required{% endif %}>
+    {% endif %}
+  </div>
+  {% endfor %}
+  
+  <button type="submit" class="btn btn-primary mt-2">
+    Add to Workflow
+  </button>
+</form>
+{% else %}
+<p class="text-subdued">Select a module to configure.</p>
+{% endif %}

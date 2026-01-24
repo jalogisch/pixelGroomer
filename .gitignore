@@ -43,3 +43,6 @@ __pycache__/
 PhotoLibrary/
 Albums/
 Export/
+
+# Web app runtime data
+web/data/

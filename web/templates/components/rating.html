@@ -1,0 +1,31 @@
+{# Star rating component #}
+{% set photo_path = photo_path if photo_path is defined else current_photo %}
+{% set rating = rating if rating is defined else (current_rating if current_rating is defined else 0) %}
+
+<div class="rating">
+  {% for i in range(1, 6) %}
+  <button class="rating-star {% if i <= rating %}filled{% endif %}"
+          data-rating="{{ i }}"
+          hx-post="{{ url_for('api.rate_photo', photo_path=photo_path) }}"
+          hx-vals='{"rating": {{ i }}}'
+          hx-target="closest .rating"
+          hx-swap="outerHTML"
+          title="Rate {{ i }} star{% if i > 1 %}s{% endif %}">
+    {% if i <= rating %}★{% else %}☆{% endif %}
+  </button>
+  {% endfor %}
+  
+  {# Clear rating button #}
+  {% if rating > 0 %}
+  <button class="rating-star text-subdued"
+          data-rating="0"
+          hx-post="{{ url_for('api.rate_photo', photo_path=photo_path) }}"
+          hx-vals='{"rating": 0}'
+          hx-target="closest .rating"
+          hx-swap="outerHTML"
+          title="Clear rating"
+          style="margin-left: 0.5rem; font-size: 0.875rem;">
+    ✕
+  </button>
+  {% endif %}
+</div>

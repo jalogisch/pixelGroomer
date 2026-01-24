@@ -1,0 +1,52 @@
+id: exif
+name: Set EXIF Metadata
+description: Set EXIF/IPTC/XMP metadata on photos
+icon: tag
+order: 2
+
+parameters:
+  - id: directory
+    type: path
+    label: Directory
+    placeholder: ~/Pictures/PhotoLibrary/2026-01-24
+    required: true
+    cli_flag: ""
+    
+  - id: author
+    type: text
+    label: Author
+    cli_flag: --author
+    
+  - id: artist
+    type: text
+    label: Artist
+    placeholder: pixelpiste
+    cli_flag: --artist
+    
+  - id: copyright
+    type: text
+    label: Copyright
+    cli_flag: --copyright
+    
+  - id: gps
+    type: text
+    label: GPS Coordinates
+    placeholder: "51.875222,9.648111"
+    cli_flag: --gps
+    
+  - id: gps_if_missing
+    type: boolean
+    label: Only set GPS if missing
+    default: true
+    cli_flag: --if-missing
+    
+  - id: recursive
+    type: boolean
+    label: Process subdirectories
+    default: true
+    cli_flag: --recursive
+
+outputs:
+  - id: processed_count
+    type: number
+    description: Number of files processed

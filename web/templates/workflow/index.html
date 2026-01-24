@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+
+{% block title %}Workflow Planner - PixelGroomer{% endblock %}
+
+{% block content %}
+<div class="workflow-planner">
+  <div class="flex justify-between items-center mb-4">
+    <h1>Workflow Planner</h1>
+    <div class="flex gap-2">
+      <a href="{{ url_for('workflow.new_workflow') }}" class="btn btn-secondary">
+        New Workflow
+      </a>
+    </div>
+  </div>
+  
+  <!-- Module Tabs -->
+  <div class="tabs" role="tablist">
+    {% for module in modules %}
+    <button class="tab {% if loop.first %}active{% endif %}"
+            role="tab"
+            data-module-id="{{ module.id }}"
+            hx-get="{{ url_for('api.get_module_form', module_id=module.id) }}"
+            hx-target="#module-form-container"
+            hx-swap="innerHTML">
+      {{ module.name }}
+    </button>
+    {% endfor %}
+  </div>
+  
+  <div class="split-layout mt-4">
+    <!-- Left: Form & Steps -->
+    <div class="split-main">
+      <!-- Module Form -->
+      <div class="card mb-4">
+        <div class="card-header">
+          <h3 class="card-title">Add Step</h3>
+        </div>
+        <div class="card-body" id="module-form-container">
+          {% if modules %}
+            {% include "components/module_form.html" with context %}
+          {% else %}
+            <p class="text-subdued">No modules available.</p>
+          {% endif %}
+        </div>
+      </div>
+      
+      <!-- Workflow Steps -->
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">Workflow Steps</h3>
+          <span class="text-subdued text-small">
+            {{ workflow_steps|length }} step{% if workflow_steps|length != 1 %}s{% endif %}
+          </span>
+        </div>
+        <div class="card-body" id="workflow-steps">
+          {% include "workflow/partials/steps.html" %}
+        </div>
+      </div>
+    </div>
+    
+    <!-- Right: Actions -->
+    <div class="split-sidebar">
+      <!-- Save Workflow -->
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">Save Workflow</h3>
+        </div>
+        <div class="card-body">
+          <form hx-post="{{ url_for('api.save_workflow') }}"
+                hx-target="#save-status"
+                hx-swap="innerHTML">
+            <div class="form-group">
+              <label class="form-label" for="workflow-name">Workflow Name</label>
+              <input type="text" 
+                     class="form-input" 
+                     id="workflow-name"
+                     name="name"
+                     value="{{ session.get('workflow_name', '') }}"
+                     placeholder="My Workflow">
+            </div>
+            <button type="submit" class="btn btn-primary" style="width: 100%;">
+              Save Draft
+            </button>
+          </form>
+          <div id="save-status" class="mt-2"></div>
+        </div>
+      </div>
+      
+      <!-- Execute Workflow -->
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">Execute</h3>
+        </div>
+        <div class="card-body">
+          <form hx-post="{{ url_for('api.execute_workflow') }}"
+                hx-target="#execution-result"
+                hx-swap="innerHTML">
+            <div class="form-checkbox mb-3">
+              <input type="checkbox" id="dry-run" name="dry_run" value="true">
+              <label for="dry-run">Dry run (preview only)</label>
+            </div>
+            <button type="submit" class="btn btn-success" style="width: 100%;"
+                    {% if not workflow_steps %}disabled{% endif %}>
+              Execute Workflow
+            </button>
+          </form>
+          <div id="execution-result" class="mt-3"></div>
+        </div>
+      </div>
+      
+      <!-- Saved Workflows -->
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">Saved Workflows</h3>
+        </div>
+        <div class="card-body">
+          <p class="text-subdued text-small">
+            Load a previously saved workflow.
+          </p>
+          <!-- Would list saved workflows here -->
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Handle tab switching
+document.querySelectorAll('.tabs .tab').forEach(tab => {
+  tab.addEventListener('click', function() {
+    document.querySelectorAll('.tabs .tab').forEach(t => t.classList.remove('active'));
+    this.classList.add('active');
+  });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,209 @@
+{# Image browser with preview and sidebar #}
+{% if photos %}
+<div class="split-layout">
+  <!-- Main: Image Viewer -->
+  <div class="split-main">
+    <div class="card">
+      <div class="card-body">
+        <div class="image-viewer">
+          <!-- Image Container -->
+          <div class="image-container">
+            {% if current_photo %}
+            {% set is_raw = photo_info and photo_info.is_raw %}
+            {% if is_raw %}
+            <div style="padding: 3rem; text-align: center; color: var(--color-text-subdued);">
+              <p>RAW file preview not available</p>
+              <p class="text-small">{{ photo_info.name }}</p>
+            </div>
+            {% else %}
+            <img src="{{ url_for('api.get_thumbnail', photo_path=current_photo) }}" 
+                 alt="{{ current_photo }}"
+                 loading="lazy">
+            {% endif %}
+            {% endif %}
+          </div>
+          
+          <!-- Navigation -->
+          <div class="image-nav">
+            {% set prev_index = current_index - 1 if current_index > 0 else 0 %}
+            {% set next_index = current_index + 1 if current_index < photos|length - 1 else photos|length - 1 %}
+            
+            <button class="btn btn-secondary"
+                    data-nav="prev"
+                    hx-get="{{ url_for('album.browser') }}"
+                    hx-vals='{"folder": "{{ folder }}", "index": {{ prev_index }}}'
+                    hx-target="#image-browser"
+                    hx-swap="innerHTML"
+                    {% if current_index == 0 %}disabled{% endif %}>
+              ← Prev
+            </button>
+            
+            <span class="image-counter">
+              {{ current_index + 1 }} / {{ photos|length }}
+            </span>
+            
+            <button class="btn btn-secondary"
+                    data-nav="next"
+                    hx-get="{{ url_for('album.browser') }}"
+                    hx-vals='{"folder": "{{ folder }}", "index": {{ next_index }}}'
+                    hx-target="#image-browser"
+                    hx-swap="innerHTML"
+                    {% if current_index >= photos|length - 1 %}disabled{% endif %}>
+              Next →
+            </button>
+          </div>
+          
+          <p class="text-subdued text-small">
+            Use ← → arrow keys to navigate
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Sidebar: Info & Actions -->
+  <div class="split-sidebar">
+    <!-- Photo Info -->
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">Photo Info</h3>
+      </div>
+      <div class="card-body">
+        {% if photo_info %}
+        <div class="text-small">
+          <div class="mb-2">
+            <span class="text-subdued">File:</span><br>
+            <strong>{{ photo_info.name }}</strong>
+          </div>
+          <div class="mb-2">
+            <span class="text-subdued">Size:</span>
+            {{ photo_info.size_human }}
+          </div>
+          {% if photo_info.dimensions %}
+          <div class="mb-2">
+            <span class="text-subdued">Dimensions:</span>
+            {{ photo_info.dimensions }}
+          </div>
+          {% endif %}
+          {% if photo_info.is_raw %}
+          <div class="mb-2">
+            <span class="text-subdued">Type:</span>
+            RAW ({{ photo_info.extension }})
+          </div>
+          {% endif %}
+        </div>
+        {% endif %}
+      </div>
+    </div>
+    
+    <!-- Rating -->
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">Rating</h3>
+      </div>
+      <div class="card-body">
+        {% if current_photo %}
+        {% set current_rating = photo_info.rating if photo_info else 0 %}
+        {% include "components/rating.html" with context %}
+        {% endif %}
+      </div>
+    </div>
+    
+    <!-- Albums -->
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">Albums</h3>
+      </div>
+      <div class="card-body">
+        {% if current_photo %}
+        <div id="album-checkboxes">
+          {% include "album/partials/album_checkboxes.html" %}
+        </div>
+        
+        <!-- Create New Album -->
+        <form hx-post="{{ url_for('api.create_album') }}"
+              hx-target="#album-checkboxes"
+              hx-swap="innerHTML"
+              class="mt-3">
+          <div class="flex gap-2">
+            <input type="text" 
+                   class="form-input" 
+                   name="name" 
+                   placeholder="New album name"
+                   style="flex: 1;">
+            <button type="submit" class="btn btn-secondary btn-small">
+              + Add
+            </button>
+          </div>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+    
+    <!-- Export -->
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">Export Album</h3>
+      </div>
+      <div class="card-body">
+        <form hx-post="{{ url_for('api.export_album', album_name='selected') }}"
+              hx-target="#export-result"
+              hx-swap="innerHTML">
+          <div class="form-group">
+            <label class="form-label">Album</label>
+            <select class="form-select" name="album_name">
+              {% for album in albums %}
+              <option value="{{ album.name }}">
+                {{ album.name }} ({{ album.photo_count }})
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">Watermark</label>
+            <input type="text" 
+                   class="form-input" 
+                   name="watermark"
+                   placeholder="Jan Doberstein - enduroXperience">
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">Max Size (KB)</label>
+            <input type="number" 
+                   class="form-input" 
+                   name="max_size"
+                   value="2048">
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">Output Directory</label>
+            <input type="text" 
+                   class="form-input" 
+                   name="output_dir"
+                   placeholder="~/Desktop/Export">
+          </div>
+          
+          <button type="submit" class="btn btn-primary" style="width: 100%;"
+                  {% if not albums %}disabled{% endif %}>
+            Export Album
+          </button>
+        </form>
+        <div id="export-result" class="mt-2"></div>
+      </div>
+    </div>
+  </div>
+</div>
+{% else %}
+<div class="card">
+  <div class="card-body">
+    <p class="text-subdued text-center">
+      {% if folder %}
+      No photos found in this folder.
+      {% else %}
+      Select a folder to browse photos.
+      {% endif %}
+    </p>
+  </div>
+</div>
+{% endif %}

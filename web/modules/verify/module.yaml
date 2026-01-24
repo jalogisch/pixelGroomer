@@ -1,0 +1,40 @@
+id: verify
+name: Verify Checksums
+description: Generate or verify file checksums for integrity checking
+icon: check-circle
+order: 5
+
+parameters:
+  - id: action
+    type: select
+    label: Action
+    options:
+      - value: generate
+        label: Generate checksums
+      - value: verify
+        label: Verify existing checksums
+      - value: update
+        label: Update checksums (add new files)
+    default: generate
+    cli_flag: ""
+    
+  - id: directory
+    type: path
+    label: Directory
+    placeholder: ~/Pictures/PhotoLibrary/2026-01-24
+    required: true
+    cli_flag: ""
+    
+  - id: recursive
+    type: boolean
+    label: Process subdirectories
+    default: true
+    cli_flag: --recursive
+
+outputs:
+  - id: verified_count
+    type: number
+    description: Number of files verified
+  - id: failed_count
+    type: number
+    description: Number of files that failed verification

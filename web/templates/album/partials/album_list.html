@@ -1,0 +1,15 @@
+{# Album list for sidebar #}
+{% if albums %}
+<ul style="list-style: none; padding: 0; margin: 0;">
+  {% for album in albums %}
+  <li class="mb-2">
+    <a href="{{ url_for('album.index', album=album.name) }}">
+      {{ album.name }}
+    </a>
+    <span class="text-subdued text-small">({{ album.photo_count }})</span>
+  </li>
+  {% endfor %}
+</ul>
+{% else %}
+<p class="text-subdued text-small">No albums yet.</p>
+{% endif %}

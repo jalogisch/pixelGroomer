@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}PixelGroomer Web{% endblock %}</title>
+  
+  <!-- Theme CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/themes/' + current_theme + '.css') }}" id="theme-css">
+  
+  <!-- Main CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+  
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="app-logo">
+        <svg viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+        </svg>
+        <span>PixelGroomer</span>
+      </div>
+      
+      <nav class="app-nav">
+        <a href="{{ url_for('workflow.index') }}" 
+           class="{% if request.endpoint and request.endpoint.startswith('workflow') %}active{% endif %}">
+          Workflow
+        </a>
+        <a href="{{ url_for('album.index') }}"
+           class="{% if request.endpoint and request.endpoint.startswith('album') %}active{% endif %}">
+          Albums
+        </a>
+      </nav>
+      
+      <div class="app-controls">
+        <div class="theme-selector">
+          <select id="theme-select" 
+                  hx-post="{{ url_for('api.set_theme') }}"
+                  hx-target="#theme-css"
+                  hx-swap="outerHTML"
+                  name="theme">
+            {% for theme in themes %}
+            <option value="{{ theme.id }}" {% if theme.id == current_theme %}selected{% endif %}>
+              {{ theme.name }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+    </header>
+    
+    <!-- Main Content -->
+    <main class="app-main">
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+  
+  <!-- HTMX -->
+  <script src="{{ url_for('static', filename='js/htmx.min.js') }}"></script>
+  
+  <!-- App JS -->
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+  
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

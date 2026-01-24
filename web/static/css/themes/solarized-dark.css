@@ -1,0 +1,76 @@
+/* Solarized Dark Theme
+ * By Ethan Schoonover
+ * https://ethanschoonover.com/solarized/
+ */
+
+:root {
+  /* Solarized base colors */
+  --sol-base03:  #002b36;
+  --sol-base02:  #073642;
+  --sol-base01:  #586e75;
+  --sol-base00:  #657b83;
+  --sol-base0:   #839496;
+  --sol-base1:   #93a1a1;
+  --sol-base2:   #eee8d5;
+  --sol-base3:   #fdf6e3;
+  
+  /* Solarized accent colors */
+  --sol-yellow:  #b58900;
+  --sol-orange:  #cb4b16;
+  --sol-red:     #dc322f;
+  --sol-magenta: #d33682;
+  --sol-violet:  #6c71c4;
+  --sol-blue:    #268bd2;
+  --sol-cyan:    #2aa198;
+  --sol-green:   #859900;
+  
+  /* Primary colors */
+  --color-primary: var(--sol-blue);
+  --color-primary-dark: #1a6091;
+  --color-primary-light: var(--sol-cyan);
+  --color-primary-transparent: rgba(38, 139, 210, 0.3);
+  
+  /* Secondary colors */
+  --color-secondary: var(--sol-base0);
+  --color-secondary-dark: var(--sol-base1);
+  
+  /* Status colors */
+  --color-success: var(--sol-green);
+  --color-success-light: rgba(133, 153, 0, 0.2);
+  --color-success-dark: #a3ba00;
+  
+  --color-warning: var(--sol-yellow);
+  --color-warning-light: rgba(181, 137, 0, 0.2);
+  --color-warning-dark: #d4a000;
+  
+  --color-danger: var(--sol-red);
+  --color-danger-light: rgba(220, 50, 47, 0.2);
+  --color-danger-dark: #e85856;
+  
+  /* Background colors */
+  --color-background: var(--sol-base03);
+  --color-background-light: var(--sol-base02);
+  --color-background-dark: #001f27;
+  
+  /* Text colors */
+  --color-text: var(--sol-base0);
+  --color-text-subdued: var(--sol-base01);
+  --color-text-inverse: var(--sol-base03);
+  
+  /* Border colors */
+  --color-border: var(--sol-base01);
+  --color-border-dark: var(--sol-base02);
+  
+  /* Component-specific */
+  --color-tab-active: var(--sol-blue);
+  --color-rating-star: var(--sol-yellow);
+  
+  /* Border radius */
+  --border-radius: 4px;
+  --border-radius-lg: 6px;
+  
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.5);
+}

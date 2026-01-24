@@ -1,0 +1,56 @@
+id: develop
+name: Develop RAW
+description: Convert RAW files to JPG using darktable or ImageMagick
+icon: image
+order: 3
+
+parameters:
+  - id: source
+    type: path
+    label: Source (directory or files)
+    placeholder: ~/Pictures/PhotoLibrary/2026-01-24
+    required: true
+    cli_flag: ""
+    
+  - id: output
+    type: path
+    label: Output Directory
+    placeholder: ~/Pictures/PhotoLibrary/2026-01-24/developed
+    cli_flag: --output
+    
+  - id: processor
+    type: select
+    label: Processor
+    options:
+      - value: darktable
+        label: darktable (higher quality)
+      - value: imagemagick
+        label: ImageMagick (faster)
+    default: darktable
+    cli_flag: --processor
+    
+  - id: preset
+    type: text
+    label: darktable Preset/Style
+    placeholder: "Enduro Action"
+    cli_flag: --preset
+    
+  - id: quality
+    type: number
+    label: JPEG Quality (1-100)
+    default: 95
+    cli_flag: --quality
+    
+  - id: recursive
+    type: boolean
+    label: Process subdirectories
+    default: false
+    cli_flag: --recursive
+
+outputs:
+  - id: developed_count
+    type: number
+    description: Number of files developed
+  - id: output_directory
+    type: path
+    description: Directory containing developed files

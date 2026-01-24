@@ -1,0 +1,286 @@
+"""API routes for HTMX interactions."""
+from flask import Blueprint, request, session, current_app, render_template, jsonify
+
+api_bp = Blueprint('api', __name__, url_prefix='/api')
+
+
+# ============================================================================
+# Theme
+# ============================================================================
+
+@api_bp.route('/theme', methods=['POST'])
+def set_theme():
+    """Set the current theme."""
+    theme = request.form.get('theme', current_app.config['DEFAULT_THEME'])
+    session['theme'] = theme
+    
+    # Return the new theme stylesheet link for HTMX to swap
+    return f'<link rel="stylesheet" href="/static/css/themes/{theme}.css" id="theme-css">'
+
+
+# ============================================================================
+# Workflow
+# ============================================================================
+
+@api_bp.route('/workflow/steps', methods=['GET'])
+def get_workflow_steps():
+    """Get current workflow steps."""
+    steps = session.get('workflow_steps', [])
+    return render_template('workflow/partials/steps.html', steps=steps)
+
+
+@api_bp.route('/workflow/steps', methods=['POST'])
+def add_workflow_step():
+    """Add a step to the workflow."""
+    from modules import get_module
+    
+    module_id = request.form.get('module_id')
+    module = get_module(module_id)
+    
+    if not module:
+        return 'Module not found', 404
+    
+    steps = session.get('workflow_steps', [])
+    step = {
+        'id': len(steps) + 1,
+        'module_id': module_id,
+        'module_name': module.name,
+        'params': {},
+    }
+    steps.append(step)
+    session['workflow_steps'] = steps
+    
+    return render_template('workflow/partials/steps.html', steps=steps)
+
+
+@api_bp.route('/workflow/steps/<int:step_id>', methods=['DELETE'])
+def remove_workflow_step(step_id: int):
+    """Remove a step from the workflow."""
+    steps = session.get('workflow_steps', [])
+    steps = [s for s in steps if s['id'] != step_id]
+    
+    # Renumber steps
+    for i, step in enumerate(steps):
+        step['id'] = i + 1
+    
+    session['workflow_steps'] = steps
+    return render_template('workflow/partials/steps.html', steps=steps)
+
+
+@api_bp.route('/workflow/steps/<int:step_id>/params', methods=['POST'])
+def update_step_params(step_id: int):
+    """Update parameters for a workflow step."""
+    steps = session.get('workflow_steps', [])
+    
+    for step in steps:
+        if step['id'] == step_id:
+            # Update params from form
+            for key, value in request.form.items():
+                if key != 'step_id':
+                    step['params'][key] = value
+            break
+    
+    session['workflow_steps'] = steps
+    return '', 204
+
+
+@api_bp.route('/workflow/module-form/<module_id>', methods=['GET'])
+def get_module_form(module_id: str):
+    """Get the form for a module."""
+    from modules import get_module
+    
+    module = get_module(module_id)
+    if not module:
+        return 'Module not found', 404
+    
+    step_id = request.args.get('step_id', 0)
+    return render_template(
+        'components/module_form.html',
+        module=module,
+        step_id=step_id,
+        params={},
+    )
+
+
+@api_bp.route('/workflow/save', methods=['POST'])
+def save_workflow():
+    """Save the current workflow."""
+    from services.workflow import WorkflowService
+    
+    name = request.form.get('name', 'Untitled Workflow')
+    steps = session.get('workflow_steps', [])
+    
+    service = WorkflowService(current_app.config)
+    workflow_id = service.save(name, steps)
+    
+    session['workflow_name'] = name
+    
+    return render_template(
+        'workflow/partials/save_status.html',
+        success=True,
+        workflow_id=workflow_id,
+        message=f'Workflow "{name}" saved',
+    )
+
+
+@api_bp.route('/workflow/execute', methods=['POST'])
+def execute_workflow():
+    """Execute the current workflow."""
+    from services.workflow import WorkflowService
+    
+    steps = session.get('workflow_steps', [])
+    dry_run = request.form.get('dry_run', 'false') == 'true'
+    
+    service = WorkflowService(current_app.config)
+    result = service.execute(steps, dry_run=dry_run)
+    
+    return render_template(
+        'workflow/partials/execution_result.html',
+        result=result,
+    )
+
+
+# ============================================================================
+# Photos
+# ============================================================================
+
+@api_bp.route('/photos/<path:folder>')
+def get_photos(folder: str):
+    """Get photos in a folder."""
+    from services.library import LibraryService
+    
+    library = LibraryService(current_app.config)
+    photos = library.get_photos(folder)
+    
+    return render_template(
+        'album/partials/photo_grid.html',
+        photos=photos,
+        folder=folder,
+    )
+
+
+@api_bp.route('/photos/thumbnail/<path:photo_path>')
+def get_thumbnail(photo_path: str):
+    """Get or generate a thumbnail for a photo."""
+    from services.library import LibraryService
+    from flask import send_file
+    
+    library = LibraryService(current_app.config)
+    thumbnail_path = library.get_thumbnail(photo_path)
+    
+    if thumbnail_path and thumbnail_path.exists():
+        return send_file(thumbnail_path, mimetype='image/jpeg')
+    
+    return '', 404
+
+
+@api_bp.route('/photos/<path:photo_path>/rate', methods=['POST'])
+def rate_photo(photo_path: str):
+    """Set the rating for a photo."""
+    from services.library import LibraryService
+    
+    rating = int(request.form.get('rating', 0))
+    rating = max(0, min(5, rating))
+    
+    library = LibraryService(current_app.config)
+    library.set_rating(photo_path, rating)
+    
+    return render_template(
+        'components/rating.html',
+        photo_path=photo_path,
+        rating=rating,
+    )
+
+
+@api_bp.route('/photos/<path:photo_path>/album', methods=['POST'])
+def toggle_photo_album(photo_path: str):
+    """Add or remove a photo from an album."""
+    from services.album import AlbumService
+    
+    album_name = request.form.get('album')
+    action = request.form.get('action', 'toggle')
+    
+    service = AlbumService(current_app.config)
+    
+    if action == 'add':
+        service.add_to_album(album_name, photo_path)
+    elif action == 'remove':
+        service.remove_from_album(album_name, photo_path)
+    else:  # toggle
+        if service.is_in_album(album_name, photo_path):
+            service.remove_from_album(album_name, photo_path)
+        else:
+            service.add_to_album(album_name, photo_path)
+    
+    # Return updated album checkboxes
+    albums = service.list_albums()
+    photo_albums = service.get_photo_albums(photo_path)
+    
+    return render_template(
+        'album/partials/album_checkboxes.html',
+        photo_path=photo_path,
+        albums=albums,
+        photo_albums=photo_albums,
+    )
+
+
+# ============================================================================
+# Albums
+# ============================================================================
+
+@api_bp.route('/albums', methods=['GET'])
+def list_albums():
+    """List all albums."""
+    from services.album import AlbumService
+    
+    service = AlbumService(current_app.config)
+    albums = service.list_albums()
+    
+    return render_template(
+        'album/partials/album_list.html',
+        albums=albums,
+    )
+
+
+@api_bp.route('/albums', methods=['POST'])
+def create_album():
+    """Create a new album."""
+    from services.album import AlbumService
+    
+    name = request.form.get('name', '').strip()
+    if not name:
+        return 'Album name required', 400
+    
+    service = AlbumService(current_app.config)
+    service.create_album(name)
+    
+    albums = service.list_albums()
+    return render_template(
+        'album/partials/album_list.html',
+        albums=albums,
+    )
+
+
+@api_bp.route('/albums/<album_name>/export', methods=['POST'])
+def export_album(album_name: str):
+    """Export an album."""
+    from services.album import AlbumService
+    
+    output_dir = request.form.get('output_dir', '')
+    watermark = request.form.get('watermark', '')
+    max_size = int(request.form.get('max_size', 2048))
+    resize = int(request.form.get('resize', 2048))
+    
+    service = AlbumService(current_app.config)
+    result = service.export_album(
+        album_name,
+        output_dir=output_dir,
+        watermark=watermark,
+        max_size_kb=max_size,
+        resize_px=resize,
+    )
+    
+    return render_template(
+        'album/partials/export_result.html',
+        result=result,
+    )

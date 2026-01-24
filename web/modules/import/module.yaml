@@ -1,0 +1,46 @@
+id: import
+name: Import Photos
+description: Import photos from SD card or folder with automatic organization
+icon: upload
+order: 1
+
+parameters:
+  - id: source
+    type: path
+    label: Source Directory
+    placeholder: /Volumes/EOS_DIGITAL
+    required: true
+    must_exist: true
+    cli_flag: ""
+    
+  - id: event
+    type: text
+    label: Event Name
+    placeholder: "2026-01-24 Endurotraining"
+    cli_flag: --event
+    
+  - id: location
+    type: text
+    label: Location
+    placeholder: Stadtoldendorf
+    cli_flag: --location
+    
+  - id: author
+    type: text
+    label: Author
+    default: "{{DEFAULT_AUTHOR}}"
+    cli_flag: --author
+    
+  - id: copyright
+    type: text
+    label: Copyright
+    default: "Unlicense - Public Domain"
+    cli_flag: --copyright
+
+outputs:
+  - id: imported_count
+    type: number
+    description: Number of imported files
+  - id: target_directory
+    type: path
+    description: Directory where files were imported to

@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}Album Manager - PixelGroomer{% endblock %}
+
+{% block content %}
+<div class="album-manager">
+  <div class="flex justify-between items-center mb-4">
+    <h1>Album Manager</h1>
+  </div>
+  
+  <!-- Folder Selection -->
+  <div class="card mb-4">
+    <div class="card-body">
+      <div class="flex gap-4 items-center">
+        <div class="form-group" style="margin-bottom: 0; flex: 1;">
+          <label class="form-label" for="folder-select">Folder</label>
+          <select class="form-select" 
+                  id="folder-select"
+                  hx-get="{{ url_for('album.browser') }}"
+                  hx-target="#image-browser"
+                  hx-swap="innerHTML"
+                  hx-include="this"
+                  name="folder">
+            <option value="">-- Select folder --</option>
+            {% for folder in folders %}
+            <option value="{{ folder }}" {% if folder == current_folder %}selected{% endif %}>
+              {{ folder }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="text-subdued text-small">
+          {% if photos %}{{ photos|length }} photos{% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Image Browser -->
+  <div id="image-browser">
+    {% include "album/browser.html" %}
+  </div>
+</div>
+{% endblock %}

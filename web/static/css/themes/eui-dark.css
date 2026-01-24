@@ -1,0 +1,56 @@
+/* EUI Dark Theme
+ * Inspired by Elastic UI Framework
+ * https://eui.elastic.co/
+ */
+
+:root {
+  /* Primary colors */
+  --color-primary: #1BA9F5;
+  --color-primary-dark: #006BB4;
+  --color-primary-light: #7DCDFF;
+  --color-primary-transparent: rgba(27, 169, 245, 0.2);
+  
+  /* Secondary colors */
+  --color-secondary: #98A2B3;
+  --color-secondary-dark: #69707D;
+  
+  /* Status colors */
+  --color-success: #7DE2D1;
+  --color-success-light: rgba(125, 226, 209, 0.15);
+  --color-success-dark: #017D73;
+  
+  --color-warning: #F3D371;
+  --color-warning-light: rgba(243, 211, 113, 0.15);
+  --color-warning-dark: #F5A700;
+  
+  --color-danger: #F66;
+  --color-danger-light: rgba(255, 102, 102, 0.15);
+  --color-danger-dark: #BD271E;
+  
+  /* Background colors */
+  --color-background: #1D1E24;
+  --color-background-light: #25262E;
+  --color-background-dark: #141519;
+  
+  /* Text colors */
+  --color-text: #DFE5EF;
+  --color-text-subdued: #98A2B3;
+  --color-text-inverse: #1D1E24;
+  
+  /* Border colors */
+  --color-border: #343741;
+  --color-border-dark: #25262E;
+  
+  /* Component-specific */
+  --color-tab-active: var(--color-primary);
+  --color-rating-star: #F3D371;
+  
+  /* Border radius */
+  --border-radius: 4px;
+  --border-radius-lg: 6px;
+  
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.4);
+}

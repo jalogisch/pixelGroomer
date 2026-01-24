@@ -95,12 +95,14 @@ location: "Berlin"
 - [Configuration](doc/configuration.en.md) - All settings explained
 - [Script Reference](doc/scripts.en.md) - Detailed options for all scripts
 - [Examples](doc/examples.en.md) - Complete workflow examples
+- [Web Planner](doc/web-planner.en.md) - Web interface architecture
 
 German documentation:
 - [Workflow (DE)](doc/workflow.de.md)
 - [Konfiguration (DE)](doc/configuration.de.md)
 - [Script-Referenz (DE)](doc/scripts.de.md)
 - [Beispiele (DE)](doc/examples.de.md)
+- [Web Planner (DE)](doc/web-planner.de.md)
 
 ## Contributing with AI
 
@@ -109,6 +111,7 @@ This project uses Cursor rules (`.cursor/rules/*.mdc`) to guide AI assistants:
 | Rule | Purpose |
 |------|---------|
 | `languages.mdc` | Only Bash and Python; Python must run in venv |
+| `python-style.mdc` | Python code style for web application |
 | `bash-compatibility.mdc` | Enforce Bash 3.2 compatibility (macOS default) |
 | `bilingual-docs.mdc` | Maintain documentation in German and English |
 | `shellcheck.mdc` | Require ShellCheck validation for all scripts |

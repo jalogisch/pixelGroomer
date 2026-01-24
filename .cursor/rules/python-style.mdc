@@ -1,0 +1,111 @@
+---
+description: Python code style for web application
+globs: "web/**/*.py"
+alwaysApply: false
+---
+
+# Python Code Style
+
+Python code in the web/ directory follows these conventions.
+
+## Type Hints
+
+Use type hints for function signatures:
+
+```python
+def process_photo(path: str, rating: int = 0) -> dict:
+    ...
+
+def get_photos(folder: str) -> list[str]:
+    ...
+```
+
+## Imports
+
+Order imports as:
+1. Standard library
+2. Third-party packages
+3. Local modules
+
+```python
+import json
+import subprocess
+from pathlib import Path
+from typing import Any
+
+from flask import Blueprint, request, current_app
+
+from services.workflow import WorkflowService
+```
+
+## Flask Patterns
+
+### Blueprints
+Use blueprints for route organization:
+
+```python
+from flask import Blueprint
+
+album_bp = Blueprint('album', __name__, url_prefix='/album')
+
+@album_bp.route('/')
+def index():
+    ...
+```
+
+### Config Access
+Access config via current_app:
+
+```python
+from flask import current_app
+
+library_path = current_app.config['PHOTO_LIBRARY']
+```
+
+## File Operations
+
+Always use pathlib.Path:
+
+```python
+from pathlib import Path
+
+# Good
+path = Path(config['DATA_DIR']) / 'workflows'
+path.mkdir(parents=True, exist_ok=True)
+
+# Bad
+path = config['DATA_DIR'] + '/workflows'
+os.makedirs(path, exist_ok=True)
+```
+
+## Error Handling
+
+Return structured error responses:
+
+```python
+def process():
+    try:
+        result = do_work()
+        return {'success': True, 'data': result}
+    except ValueError as e:
+        return {'success': False, 'error': str(e)}
+```
+
+## Docstrings
+
+Use docstrings for classes and public functions:
+
+```python
+class WorkflowService:
+    """Service for managing and executing workflows."""
+    
+    def execute(self, steps: list[dict]) -> dict:
+        """Execute a workflow.
+        
+        Args:
+            steps: List of workflow step definitions
+            
+        Returns:
+            Result dict with success status and step results
+        """
+```

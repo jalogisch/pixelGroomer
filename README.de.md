@@ -95,12 +95,14 @@ location: "Berlin"
 - [Konfiguration](doc/configuration.de.md) - Alle Einstellungen erklärt
 - [Script-Referenz](doc/scripts.de.md) - Detaillierte Optionen aller Scripts
 - [Beispiele](doc/examples.de.md) - Vollständige Workflow-Beispiele
+- [Web Planner](doc/web-planner.de.md) - Web-Interface Architektur
 
 Englische Dokumentation:
 - [Workflow (EN)](doc/workflow.en.md)
 - [Configuration (EN)](doc/configuration.en.md)
 - [Script Reference (EN)](doc/scripts.en.md)
 - [Examples (EN)](doc/examples.en.md)
+- [Web Planner (EN)](doc/web-planner.en.md)
 
 ## Beitragen mit KI
 
@@ -109,6 +111,7 @@ Dieses Projekt verwendet Cursor-Regeln (`.cursor/rules/*.mdc`) zur Steuerung von
 | Regel | Zweck |
 |-------|-------|
 | `languages.mdc` | Nur Bash und Python; Python muss im venv laufen |
+| `python-style.mdc` | Python Code-Stil für Web-Anwendung |
 | `bash-compatibility.mdc` | Bash 3.2 Kompatibilität erzwingen (macOS Standard) |
 | `bilingual-docs.mdc` | Dokumentation in Deutsch und Englisch pflegen |
 | `shellcheck.mdc` | ShellCheck-Validierung für alle Scripts verlangen |
