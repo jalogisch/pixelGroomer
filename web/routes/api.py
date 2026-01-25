@@ -283,7 +283,28 @@ def toggle_photo_album(photo_path: str):
     album_name = request.form.get('album')
     action = request.form.get('action', 'toggle')
     
+    if not album_name:
+        # Return current state if no album specified
+        service = AlbumService(current_app.config)
+        albums = service.list_albums()
+        photo_albums = service.get_photo_albums(photo_path)
+        recent_albums = session.get('recent_albums', [])
+        return render_template(
+            'album/partials/album_checkboxes.html',
+            photo_path=photo_path,
+            albums=albums,
+            photo_albums=photo_albums,
+            recent_albums=recent_albums,
+        )
+    
     service = AlbumService(current_app.config)
+    
+    # Track recently used albums (add to front, keep last 2)
+    recent_albums = session.get('recent_albums', [])
+    if album_name in recent_albums:
+        recent_albums.remove(album_name)
+    recent_albums.insert(0, album_name)
+    session['recent_albums'] = recent_albums[:2]
     
     if action == 'add':
         service.add_to_album(album_name, photo_path)
@@ -298,12 +319,14 @@ def toggle_photo_album(photo_path: str):
     # Return updated album checkboxes
     albums = service.list_albums()
     photo_albums = service.get_photo_albums(photo_path)
+    recent_albums = session.get('recent_albums', [])
     
     return render_template(
         'album/partials/album_checkboxes.html',
         photo_path=photo_path,
         albums=albums,
         photo_albums=photo_albums,
+        recent_albums=recent_albums,
     )
 
 

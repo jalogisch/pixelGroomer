@@ -623,6 +623,17 @@ h4 { font-size: 1.125rem; }
   color: var(--color-text-inverse);
 }
 
+.album-checkbox.recent {
+  border-style: dashed;
+  color: var(--color-text-subdued);
+}
+
+.album-checkbox.recent:hover {
+  border-style: solid;
+  border-color: var(--color-primary);
+  color: var(--color-text);
+}
+
 /* Album dropdown for adding */
 .album-dropdown {
   padding: 0.25rem 0.5rem;

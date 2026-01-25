@@ -102,11 +102,13 @@ def browser():
     photo_info = library.get_photo_info(current_photo) if current_photo else None
     photo_albums = album_service.get_photo_albums(current_photo) if current_photo else []
     albums = album_service.list_albums()
+    recent_albums = session.get('recent_albums', [])
     
     return render_template(
         'album/browser.html',
         folder=folder,
         photos=photos,
+        recent_albums=recent_albums,
         current_index=index,
         current_photo=current_photo,
         photo_info=photo_info,

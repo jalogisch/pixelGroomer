@@ -1,21 +1,18 @@
-{# Album assignment - show recent + dropdown for others #}
+{# Album assignment - show assigned + recent + dropdown #}
 {% set photo_path = photo_path if photo_path is defined else current_photo %}
 {% set photo_albums = photo_albums if photo_albums is defined else [] %}
-{% set max_visible = 3 %}
+{% set recent_albums = recent_albums if recent_albums is defined else [] %}
 
 {% if albums %}
-{# Split into: 1) assigned to this photo, 2) recently used, 3) others #}
+{# Assigned albums (in this photo) #}
 {% set assigned = [] %}
-{% set others = [] %}
 {% for album in albums %}
   {% if album.name in photo_albums %}
     {% set _ = assigned.append(album) %}
-  {% else %}
-    {% set _ = others.append(album) %}
   {% endif %}
 {% endfor %}
 
-{# Show assigned albums as tags #}
+{# Show assigned albums as removable tags #}
 {% for album in assigned %}
 <label class="album-checkbox checked"
        hx-post="{{ url_for('api.toggle_photo_album', photo_path=photo_path) }}"
@@ -23,13 +20,37 @@
        hx-target="#album-checkboxes"
        hx-swap="innerHTML"
        hx-trigger="click"
-       title="Click to remove from {{ album.name }}">
+       title="Remove from {{ album.name }}">
   ✓ {{ album.name }}
 </label>
 {% endfor %}
 
-{# Show dropdown for adding to other albums #}
-{% if others %}
+{# Recent albums (not assigned to this photo) - quick add buttons #}
+{% for album_name in recent_albums %}
+  {% if album_name not in photo_albums %}
+    {% for album in albums if album.name == album_name %}
+<label class="album-checkbox recent"
+       hx-post="{{ url_for('api.toggle_photo_album', photo_path=photo_path) }}"
+       hx-vals='{"album": "{{ album.name }}", "action": "add"}'
+       hx-target="#album-checkboxes"
+       hx-swap="innerHTML"
+       hx-trigger="click"
+       title="Add to {{ album.name }}">
+  + {{ album.name }}
+</label>
+    {% endfor %}
+  {% endif %}
+{% endfor %}
+
+{# Dropdown for all other albums #}
+{% set other_albums = [] %}
+{% for album in albums %}
+  {% if album.name not in photo_albums and album.name not in recent_albums %}
+    {% set _ = other_albums.append(album) %}
+  {% endif %}
+{% endfor %}
+
+{% if other_albums %}
 <select class="album-dropdown"
         hx-post="{{ url_for('api.toggle_photo_album', photo_path=photo_path) }}"
         hx-target="#album-checkboxes"
@@ -38,14 +59,14 @@
         hx-include="this"
         name="album"
         onchange="if(this.value) { htmx.trigger(this, 'change'); this.value=''; }">
-  <option value="">+ Add to album...</option>
-  {% for album in others %}
-  <option value="{{ album.name }}">{{ album.name }} ({{ album.photo_count }})</option>
+  <option value="">+ Album...</option>
+  {% for album in other_albums %}
+  <option value="{{ album.name }}">{{ album.name }}</option>
   {% endfor %}
 </select>
 <input type="hidden" name="action" value="add">
 {% endif %}
 
 {% else %}
-<span class="text-subdued text-small">No albums yet →</span>
+<span class="text-subdued text-small">No albums →</span>
 {% endif %}
