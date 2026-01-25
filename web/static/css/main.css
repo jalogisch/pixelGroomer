@@ -458,6 +458,41 @@ h4 { font-size: 1.125rem; }
   background: #c0392b;
 }
 
+/* Collapsible cards */
+.card.collapsible {
+  overflow: hidden;
+}
+
+.card.collapsible > summary {
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.card.collapsible > summary::-webkit-details-marker {
+  display: none;
+}
+
+.collapsible-header {
+  user-select: none;
+}
+
+.collapse-icon {
+  font-size: 0.75rem;
+  color: var(--color-text-subdued);
+  transition: transform 0.2s ease;
+}
+
+details.collapsible:not([open]) .collapse-icon {
+  transform: rotate(-90deg);
+}
+
+details.collapsible > .card-body {
+  border-top: 1px solid var(--color-border);
+}
+
 /* ============================================================================
  * Rating Stars
  * ============================================================================ */

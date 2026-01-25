@@ -113,31 +113,33 @@
         </div>
       </div>
       
-      <!-- Example Workflows -->
-      <div class="card">
-        <div class="card-header">
-          <h3 class="card-title">Example Workflows</h3>
-        </div>
-        <div class="card-body" 
-             hx-get="{{ url_for('api.list_example_workflows') }}"
-             hx-trigger="load"
-             hx-swap="innerHTML">
-          <p class="text-subdued text-small">Loading examples...</p>
-        </div>
-      </div>
-      
-      <!-- Saved Workflows -->
-      <div class="card">
-        <div class="card-header">
+      <!-- Saved Workflows (user content first) -->
+      <details class="card collapsible" open>
+        <summary class="card-header collapsible-header">
           <h3 class="card-title">Saved Workflows</h3>
-        </div>
+          <span class="collapse-icon">▼</span>
+        </summary>
         <div class="card-body"
              hx-get="{{ url_for('api.list_saved_workflows') }}"
              hx-trigger="load"
              hx-swap="innerHTML">
           <p class="text-subdued text-small">Loading...</p>
         </div>
-      </div>
+      </details>
+      
+      <!-- Example Workflows -->
+      <details class="card collapsible">
+        <summary class="card-header collapsible-header">
+          <h3 class="card-title">Example Workflows</h3>
+          <span class="collapse-icon">▼</span>
+        </summary>
+        <div class="card-body" 
+             hx-get="{{ url_for('api.list_example_workflows') }}"
+             hx-trigger="load"
+             hx-swap="innerHTML">
+          <p class="text-subdued text-small">Loading examples...</p>
+        </div>
+      </details>
     </div>
   </div>
 </div>
