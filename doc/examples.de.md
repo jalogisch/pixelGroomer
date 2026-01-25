@@ -4,6 +4,257 @@
 
 Dieses Dokument zeigt, wie PixelGroomer-Tools zu vollständigen Workflows kombiniert werden können.
 
+## Verfügbare Beispiel-Workflows
+
+| Script | Zweck |
+|--------|-------|
+| `daily-offload.sh` | Einfacher täglicher SD-Karten-Import für mehrtägige Events |
+| `develop-album.sh` | RAW-Dateien mit einheitlichem darktable-Preset entwickeln |
+| `album-export.sh` | Album-Export mit Lizenz-Metadaten und Wasserzeichen |
+| `enduro-workflow.sh` | Kompletter Workflow mit Entwicklung und Web-Export |
+
+---
+
+## Täglicher Offload Workflow
+
+Das Script `examples/daily-offload.sh` bietet einen einfachen, wiederholbaren Import-Workflow für mehrtägige Events. Ideal für das tägliche Entladen von SD-Karten mit konsistenten Metadaten.
+
+### Anwendungsfall
+
+- Mehrtägiges Motorrad-Event (Rallye, Tour, Training)
+- Tägliches SD-Karten-Offload ins Archiv
+- Konsistente Metadaten über alle Tage
+- Keine Entwicklung oder Export - nur sichere Archivierung
+
+### Konfiguration
+
+Passe den Script-Header für dein Event an:
+
+```bash
+# Event-Information
+EVENT_NAME="GS Treffen 2026"           # Basis-Name für das Event
+EVENT_LOCATION="Garmisch-Partenkirchen"
+EVENT_GPS="47.5000,11.1000"            # GPS-Koordinaten
+
+# Fotografen-Metadaten
+AUTHOR="Jan Doberstein"
+ARTIST="pixelpiste"
+COPYRIGHT="Unlicense - Public Domain"
+```
+
+### Grundlegende Verwendung
+
+```bash
+# Tägliches Offload - Datum ist automatisch
+./examples/daily-offload.sh /Volumes/EOS_DIGITAL
+
+# Explizite Tag-Nummer
+./examples/daily-offload.sh /Volumes/EOS_DIGITAL --day 2
+
+# Vorschau ohne Änderungen
+./examples/daily-offload.sh /Volumes/EOS_DIGITAL --dry-run
+```
+
+### Workflow-Schritte
+
+Das Script führt diese Schritte aus:
+
+1. **Import** - Fotos von SD-Karte mit Organisation nach Datum kopieren
+2. **EXIF-Metadaten** - Autor, Künstler, GPS-Koordinaten setzen
+3. **Checksums** - Integritätsprüfungsdateien generieren
+
+### Ausgabe-Struktur
+
+Tägliche Ausführung erstellt organisierte Ordner:
+
+```
+~/Pictures/PhotoLibrary/
+├── 2026-07-10/                              # Tag 1
+│   ├── 20260710_GS_Treffen_2026_001.cr3
+│   ├── 20260710_GS_Treffen_2026_002.cr3
+│   └── .checksums
+├── 2026-07-11/                              # Tag 2
+│   ├── 20260711_GS_Treffen_2026_001.cr3
+│   └── .checksums
+└── 2026-07-12/                              # Tag 3
+    └── ...
+```
+
+### Tipps für Mehrtages-Events
+
+1. **Vor dem Event:** `daily-offload.sh` kopieren und Konfiguration anpassen
+2. **Jeden Abend:** SD-Karte einlegen, Script ausführen, Karte für nächsten Tag formatieren
+3. **Nach dem Event:** `develop-album.sh` für einheitlichen Stil, dann `album-export.sh` zum Teilen
+
+---
+
+## Album-Entwicklungs Workflow
+
+Das Script `examples/develop-album.sh` entwickelt RAW-Dateien stapelweise mit einem einheitlichen darktable-Preset, sodass alle Fotos eines Events den gleichen Look haben.
+
+### Anwendungsfall
+
+- Alle RAW-Fotos einer Rallye mit einheitlichem Stil entwickeln
+- Deinen Signature-Look auf alle Event-Fotos anwenden
+- Stapel-Konvertierung von RAW zu hochwertigem JPEG
+
+### Konfiguration
+
+Passe den Script-Header an:
+
+```bash
+# Standard darktable-Preset/Stil
+DEFAULT_PRESET="Adventure"
+
+# Ausgabe-Qualität
+JPEG_QUALITY=92
+
+# Unterordner-Name für Ausgabe
+OUTPUT_SUBFOLDER="developed"
+```
+
+### Darktable-Presets erstellen
+
+1. Öffne ein repräsentatives Foto in darktable
+2. Bearbeite es mit deinem gewünschten Look (Belichtung, Farben, Kontrast)
+3. Gehe zum 'Stile'-Modul (linkes Panel im Dunkelkammer-Modus)
+4. Klicke 'Stil erstellen' und benenne ihn (z.B. "Enduro Action")
+
+### Grundlegende Verwendung
+
+```bash
+# Album mit Standard-Preset entwickeln
+./examples/develop-album.sh "GS_Treffen_Highlights"
+
+# Bestimmtes Preset verwenden
+./examples/develop-album.sh "Alps_Tour" --preset "Vivid Landscape"
+
+# Ordner mit benutzerdefinierter Ausgabe entwickeln
+./examples/develop-album.sh ~/Pictures/PhotoLibrary/2026-07-10 --output ~/Desktop/Developed
+
+# Verfügbare Presets auflisten
+./examples/develop-album.sh --list-presets
+```
+
+### Ausgabe-Struktur
+
+Entwickelte JPEGs werden in einem Unterordner abgelegt:
+
+```
+Albums/GS_Treffen_Highlights/
+├── IMG_001.cr3                    # Original RAW (Symlink)
+├── IMG_002.cr3
+├── IMG_003.cr3
+└── developed/                     # Vom Script erstellt
+    ├── IMG_001.jpg                # Entwickeltes JPEG
+    ├── IMG_002.jpg
+    └── IMG_003.jpg
+```
+
+### Workflow: Entwicklung → Export
+
+Kombiniere mit `album-export.sh` für kompletten Workflow:
+
+```bash
+# 1. Mit einheitlichem Stil entwickeln
+./examples/develop-album.sh "Rally_Photos" --preset "Enduro Action"
+
+# 2. Entwickelte Fotos mit Lizenzierung exportieren
+./examples/album-export.sh "Rally_Photos/developed" --output ~/Desktop/Share
+```
+
+---
+
+## Album-Export Workflow
+
+Das Script `examples/album-export.sh` exportiert ein Album oder Ordner mit korrekten Lizenz-Metadaten und optionalem Wasserzeichen. Ideal zum Teilen von Fotos mit klaren Nutzungsrechten.
+
+### Anwendungsfall
+
+- Fotos von einem Event mit Teilnehmern teilen
+- Fotos mit korrekter Lizenzierung veröffentlichen (CC BY-NC-SA 4.0)
+- Wasserzeichen für Namensnennung hinzufügen
+- Kontaktinformationen in Metadaten setzen
+
+### Konfiguration
+
+Passe den Script-Header an:
+
+```bash
+# Ersteller-Information
+CREATOR_NAME="Jan Doberstein"
+CREATOR_EMAIL="foto@pixelpiste.de"
+
+# Lizenzierung
+LICENSE="CC BY-NC-SA 4.0"
+COPYRIGHT_STATUS="protected"
+USAGE_TERMS="Privatnutzung frei mit Namensnennung. Kommerzielle Nutzung nur nach Rücksprache."
+
+# Wasserzeichen
+WATERMARK_TEXT="pixelPiste"
+WATERMARK_COLOR="white"
+WATERMARK_OPACITY="0.6"
+
+# Export-Einstellungen
+EXPORT_QUALITY=85
+```
+
+### Gesetzte Metadaten
+
+Das Script setzt diese Metadaten-Felder:
+
+| Feld | Wert |
+|------|------|
+| Lizenz | CC BY-NC-SA 4.0 |
+| Copyright | (c) 2026 Jan Doberstein. Alle Rechte vorbehalten. |
+| Copyright Status | protected |
+| Nutzungsbedingungen | Privatnutzung frei mit Namensnennung... |
+| Ersteller | Jan Doberstein |
+| Kontakt-E-Mail | foto@pixelpiste.de |
+
+### Grundlegende Verwendung
+
+```bash
+# Album mit Wasserzeichen exportieren
+./examples/album-export.sh "GS_Treffen_Highlights" --output ~/Desktop/Share
+
+# Ordner direkt exportieren
+./examples/album-export.sh ~/Pictures/PhotoLibrary/2026-07-10 --output ~/Desktop/Export
+
+# Höhere Qualität für Druck, ohne Wasserzeichen
+./examples/album-export.sh "Alps_Tour" --output ~/Desktop/Print --quality 95 --no-watermark
+
+# Vorschau ohne Änderungen
+./examples/album-export.sh "Rally_Photos" --output ~/Desktop/Test --dry-run
+```
+
+### Workflow-Schritte
+
+1. **Vorbereiten** - Bilder kopieren (RAW entwickeln falls nötig)
+2. **Metadaten** - Lizenz- und Copyright-Informationen setzen
+3. **Exportieren** - Wasserzeichen hinzufügen und zu JPEG komprimieren
+
+### Wasserzeichen
+
+Das Wasserzeichen ist:
+- Klein und unauffällig (ca. 1% der Bildbreite)
+- Weiß mit dezenten Schatten für Sichtbarkeit
+- Positioniert in der rechten unteren Ecke
+- Kann mit `--no-watermark` deaktiviert werden
+
+### Typische Verwendung nach Event
+
+```bash
+# 1. Album mit besten Fotos erstellen
+pg-album create "GS_Treffen_Best"
+pg-album add "GS_Treffen_Best" ~/Pictures/PhotoLibrary/2026-07-10/*.cr3
+
+# 2. Zum Teilen exportieren
+./examples/album-export.sh "GS_Treffen_Best" --output ~/Desktop/FuerTeilnehmer
+```
+
+---
+
 ## Enduro Event Workflow
 
 Das Script `examples/enduro-workflow.sh` demonstriert eine komplette Foto-Verarbeitungs-Pipeline für Motorrad-Enduro-Trainingsevents bei [enduroxperience.de](https://www.enduroxperience.de/).
