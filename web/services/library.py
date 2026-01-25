@@ -3,11 +3,13 @@ from __future__ import annotations
 
 import json
 import os
+import subprocess
 from datetime import datetime
+from io import BytesIO
 from pathlib import Path
 from typing import Any, Optional
 
-from PIL import Image
+from PIL import Image, ImageOps
 
 
 class LibraryService:
@@ -114,10 +116,6 @@ class LibraryService:
         if not full_path.exists():
             return None
         
-        # Skip RAW files for now (would need dcraw or similar)
-        if full_path.suffix.lower() in self.RAW_EXTENSIONS:
-            return None
-        
         # Generate thumbnail path
         thumb_name = photo_path.replace('/', '_').replace('\\', '_') + '.jpg'
         thumb_path = self.thumbnail_dir / thumb_name
@@ -127,9 +125,21 @@ class LibraryService:
             if thumb_path.stat().st_mtime >= full_path.stat().st_mtime:
                 return thumb_path
         
-        # Generate thumbnail
+        # Handle RAW files
+        if full_path.suffix.lower() in self.RAW_EXTENSIONS:
+            return self._generate_raw_thumbnail(full_path, thumb_path)
+        
+        # Generate thumbnail for regular images
+        return self._generate_thumbnail(full_path, thumb_path)
+    
+    def _generate_thumbnail(self, full_path: Path, thumb_path: Path) -> Optional[Path]:
+        """Generate thumbnail for regular image files."""
         try:
             with Image.open(full_path) as img:
+                # Apply EXIF orientation
+                img = ImageOps.exif_transpose(img)
+                
+                # Create thumbnail
                 img.thumbnail(self.thumbnail_size, Image.Resampling.LANCZOS)
                 
                 # Convert to RGB if necessary
@@ -141,6 +151,116 @@ class LibraryService:
             return thumb_path
         except Exception:
             return None
+    
+    def _generate_raw_thumbnail(self, full_path: Path, thumb_path: Path) -> Optional[Path]:
+        """Generate thumbnail for RAW files.
+        
+        Tries multiple methods:
+        1. Extract embedded JPEG preview using exiftool (fastest)
+        2. Use dcraw to generate preview
+        3. Use rawpy if available
+        """
+        # Method 1: Extract embedded preview with exiftool
+        preview = self._extract_raw_preview_exiftool(full_path)
+        if preview:
+            try:
+                img = Image.open(BytesIO(preview))
+                img = ImageOps.exif_transpose(img)
+                img.thumbnail(self.thumbnail_size, Image.Resampling.LANCZOS)
+                if img.mode in ('RGBA', 'P'):
+                    img = img.convert('RGB')
+                img.save(thumb_path, 'JPEG', quality=85)
+                return thumb_path
+            except Exception:
+                pass
+        
+        # Method 2: Try dcraw
+        if self._generate_raw_thumbnail_dcraw(full_path, thumb_path):
+            return thumb_path
+        
+        # Method 3: Try rawpy (if installed)
+        if self._generate_raw_thumbnail_rawpy(full_path, thumb_path):
+            return thumb_path
+        
+        return None
+    
+    def _extract_raw_preview_exiftool(self, raw_path: Path) -> Optional[bytes]:
+        """Extract embedded JPEG preview from RAW using exiftool."""
+        try:
+            # exiftool -b -PreviewImage or -JpgFromRaw
+            result = subprocess.run(
+                ['exiftool', '-b', '-PreviewImage', str(raw_path)],
+                capture_output=True,
+                timeout=10
+            )
+            if result.returncode == 0 and result.stdout and len(result.stdout) > 1000:
+                return result.stdout
+            
+            # Try JpgFromRaw (used by some cameras)
+            result = subprocess.run(
+                ['exiftool', '-b', '-JpgFromRaw', str(raw_path)],
+                capture_output=True,
+                timeout=10
+            )
+            if result.returncode == 0 and result.stdout and len(result.stdout) > 1000:
+                return result.stdout
+                
+        except (subprocess.TimeoutExpired, FileNotFoundError):
+            pass
+        
+        return None
+    
+    def _generate_raw_thumbnail_dcraw(self, raw_path: Path, thumb_path: Path) -> bool:
+        """Generate thumbnail using dcraw."""
+        try:
+            # dcraw -e extracts embedded thumbnail
+            result = subprocess.run(
+                ['dcraw', '-e', '-c', str(raw_path)],
+                capture_output=True,
+                timeout=30
+            )
+            if result.returncode == 0 and result.stdout:
+                img = Image.open(BytesIO(result.stdout))
+                img = ImageOps.exif_transpose(img)
+                img.thumbnail(self.thumbnail_size, Image.Resampling.LANCZOS)
+                if img.mode in ('RGBA', 'P'):
+                    img = img.convert('RGB')
+                img.save(thumb_path, 'JPEG', quality=85)
+                return True
+        except (subprocess.TimeoutExpired, FileNotFoundError, Exception):
+            pass
+        
+        return False
+    
+    def _generate_raw_thumbnail_rawpy(self, raw_path: Path, thumb_path: Path) -> bool:
+        """Generate thumbnail using rawpy library."""
+        try:
+            import rawpy
+            with rawpy.imread(str(raw_path)) as raw:
+                # Try to get embedded thumbnail first
+                try:
+                    thumb = raw.extract_thumb()
+                    if thumb.format == rawpy.ThumbFormat.JPEG:
+                        img = Image.open(BytesIO(thumb.data))
+                    else:
+                        img = Image.fromarray(thumb.data)
+                except rawpy.LibRawNoThumbnailError:
+                    # Generate from raw data (slower)
+                    rgb = raw.postprocess(use_camera_wb=True, half_size=True)
+                    img = Image.fromarray(rgb)
+                
+                img = ImageOps.exif_transpose(img)
+                img.thumbnail(self.thumbnail_size, Image.Resampling.LANCZOS)
+                if img.mode in ('RGBA', 'P'):
+                    img = img.convert('RGB')
+                img.save(thumb_path, 'JPEG', quality=85)
+                return True
+        except ImportError:
+            pass  # rawpy not installed
+        except Exception:
+            pass
+        
+        return False
     
     def get_rating(self, photo_path: str) -> int:
         """Get the rating for a photo."""

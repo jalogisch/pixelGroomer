@@ -9,17 +9,10 @@
           <!-- Image Container -->
           <div class="image-container">
             {% if current_photo %}
-            {% set is_raw = photo_info and photo_info.is_raw %}
-            {% if is_raw %}
-            <div style="padding: 3rem; text-align: center; color: var(--color-text-subdued);">
-              <p>RAW file preview not available</p>
-              <p class="text-small">{{ photo_info.name }}</p>
-            </div>
-            {% else %}
             <img src="{{ url_for('api.get_thumbnail', photo_path=current_photo) }}" 
                  alt="{{ current_photo }}"
-                 loading="lazy">
-            {% endif %}
+                 loading="lazy"
+                 onerror="this.onerror=null; this.parentElement.innerHTML='<div style=\'padding: 3rem; text-align: center; color: var(--color-text-subdued);\'><p>Preview not available</p><p class=\'text-small\'>{{ photo_info.name if photo_info else current_photo }}</p></div>';">
             {% endif %}
           </div>
           
