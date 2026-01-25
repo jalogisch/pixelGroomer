@@ -48,3 +48,4 @@ __pycache__/
 web/data/workflows/
 web/data/thumbnails/
 web/data/albums/
+web/data/albums.json
