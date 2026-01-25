@@ -124,8 +124,11 @@
   </div>
 </div>
 
+{% endblock %}
+
+{% block extra_js %}
 <script>
-// Handle tab switching
+// Handle tab switching - update active class
 document.querySelectorAll('.tabs .tab').forEach(tab => {
   tab.addEventListener('click', function() {
     document.querySelectorAll('.tabs .tab').forEach(t => t.classList.remove('active'));

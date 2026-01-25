@@ -8,6 +8,9 @@ document.addEventListener('DOMContentLoaded', function() {
   
   // Initialize theme persistence
   initTheme();
+  
+  // Initialize form persistence for tab switching
+  initFormPersistence();
 });
 
 /**
@@ -122,13 +125,132 @@ function setTheme(theme, save) {
 }
 
 /**
+ * Form persistence for tab switching
+ * Saves form data to sessionStorage before HTMX swaps content
+ */
+function initFormPersistence() {
+  // Storage key prefix
+  const STORAGE_PREFIX = 'pg-form-';
+  
+  /**
+   * Get all form data from a container
+   */
+  function getFormData(container) {
+    const data = {};
+    const inputs = container.querySelectorAll('input, select, textarea');
+    
+    inputs.forEach(input => {
+      if (!input.name || input.type === 'hidden') return;
+      
+      if (input.type === 'checkbox') {
+        data[input.name] = input.checked;
+      } else if (input.type === 'radio') {
+        if (input.checked) {
+          data[input.name] = input.value;
+        }
+      } else {
+        data[input.name] = input.value;
+      }
+    });
+    
+    return data;
+  }
+  
+  /**
+   * Restore form data to a container
+   */
+  function restoreFormData(container, data) {
+    if (!data || Object.keys(data).length === 0) return;
+    
+    Object.entries(data).forEach(([name, value]) => {
+      const input = container.querySelector(`[name="${name}"]`);
+      if (!input) return;
+      
+      if (input.type === 'checkbox') {
+        input.checked = value === true || value === 'true';
+      } else if (input.type === 'radio') {
+        if (input.value === value) {
+          input.checked = true;
+        }
+      } else {
+        input.value = value;
+      }
+    });
+  }
+  
+  /**
+   * Get current module ID from active tab or form
+   */
+  function getCurrentModuleId() {
+    const activeTab = document.querySelector('.tabs .tab.active');
+    if (activeTab) {
+      return activeTab.dataset.moduleId;
+    }
+    const hiddenInput = document.querySelector('#module-form-container input[name="module_id"]');
+    if (hiddenInput) {
+      return hiddenInput.value;
+    }
+    return null;
+  }
+  
+  /**
+   * Save current form data before tab switch
+   */
+  function saveCurrentForm() {
+    const container = document.querySelector('#module-form-container');
+    if (!container) return;
+    
+    const moduleId = getCurrentModuleId();
+    if (!moduleId) return;
+    
+    const data = getFormData(container);
+    if (Object.keys(data).length > 0) {
+      sessionStorage.setItem(STORAGE_PREFIX + moduleId, JSON.stringify(data));
+    }
+  }
+  
+  // Save form data before HTMX request (tab switch)
+  document.body.addEventListener('htmx:beforeRequest', function(e) {
+    // Only save for tab switches targeting the module form container
+    if (e.detail.target && e.detail.target.id === 'module-form-container') {
+      saveCurrentForm();
+    }
+  });
+  
+  // Restore form data after HTMX swap
+  document.body.addEventListener('htmx:afterSwap', function(e) {
+    // Only restore for module form container swaps
+    if (e.detail.target && e.detail.target.id === 'module-form-container') {
+      const container = e.detail.target;
+      const moduleId = getCurrentModuleId();
+      
+      if (moduleId) {
+        const savedData = sessionStorage.getItem(STORAGE_PREFIX + moduleId);
+        if (savedData) {
+          try {
+            restoreFormData(container, JSON.parse(savedData));
+          } catch (err) {
+            console.warn('Failed to restore form data:', err);
+          }
+        }
+      }
+    }
+  });
+  
+  // Also save form data periodically while user is editing
+  document.body.addEventListener('input', function(e) {
+    const container = document.querySelector('#module-form-container');
+    if (container && container.contains(e.target)) {
+      // Debounce save
+      clearTimeout(window._formSaveTimeout);
+      window._formSaveTimeout = setTimeout(saveCurrentForm, 500);
+    }
+  });
+}
+
+/**
  * HTMX event handlers
  */
-
-// After HTMX swaps content, reinitialize any necessary JS
-document.body.addEventListener('htmx:afterSwap', function(e) {
-  // Reinitialize components if needed
-});
 
 // Show loading indicator
 document.body.addEventListener('htmx:beforeRequest', function(e) {
