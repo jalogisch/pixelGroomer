@@ -69,13 +69,16 @@ Before adding a dependency, ask:
 
 ## Workflow Design
 
-**Every workflow step must be optional.** The minimal workflow should be as simple as possible.
+**Every workflow step is optional.** The only requirement is at least one step.
 
 For PixelGroomer:
-- Minimal workflow: `pg-import /Volumes/SD_CARD` (just copy files)
-- Everything else is optional: EXIF, albums, develop, export, verify
+- Import photos from SD card
+- Develop existing RAWs
+- Set EXIF on existing photos
+- Create albums from archive
+- Any combination of the above
 
-Never force users through steps they do not need.
+Each step works independently. Never force users through steps they do not need.
 
 ## Trade-offs
 

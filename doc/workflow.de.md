@@ -41,22 +41,29 @@ Alle Scripts prüfen automatisch, ob das venv existiert und zeigen einen Fehler 
 
 ## Minimaler Workflow
 
-**Jeder Schritt ist optional - nur der Import selbst ist erforderlich.** Der einfachste Workflow ist:
+**Jeder Schritt ist optional.** Die einzige Voraussetzung ist mindestens ein Schritt. Beispiele:
 
 ```bash
+# Nur von SD-Karte importieren
 pg-import /Volumes/EOS_DIGITAL
+
+# Nur vorhandene RAWs entwickeln
+pg-develop ~/Pictures/RAW/*.cr3 --output ~/Desktop/
+
+# Nur EXIF bei vorhandenen Fotos setzen
+pg-exif ~/Pictures/2026-01-24/ --author "Jan Doberstein"
 ```
 
-Das war's. Fotos werden von der SD-Karte ins Archiv kopiert. Alles andere - EXIF-Tagging, Alben, RAW-Entwicklung, Export - ist optional und kann bei Bedarf hinzugefügt werden.
+Jedes Tool funktioniert unabhängig. Kombiniere sie nach Bedarf:
 
-| Schritt | Erforderlich? | Zweck |
-|---------|---------------|-------|
-| **Import** | **Ja** (nur Quellpfad) | Dateien von SD-Karte ins Archiv kopieren |
-| EXIF-Tagging | Nein | Autor, Ort, Event-Metadaten setzen |
-| Alben | Nein | Auswahl mit Symlinks organisieren |
-| RAW-Entwicklung | Nein | RAW zu JPG konvertieren |
-| Export | Nein | Wasserzeichen, Größe, Komprimierung für Teilen |
-| Verify | Nein | Checksums generieren/prüfen |
+| Schritt | Zweck |
+|---------|-------|
+| Import | Dateien von SD-Karte ins Archiv kopieren |
+| EXIF | Autor, Ort, Event-Metadaten setzen |
+| Alben | Auswahl mit Symlinks organisieren |
+| Develop | RAW zu JPG konvertieren |
+| Export | Wasserzeichen, Größe, Komprimierung für Teilen |
+| Verify | Checksums generieren/prüfen |
 
 Baue deinen Workflow von einfach zu komplex - basierend auf deinen tatsächlichen Anforderungen.
 

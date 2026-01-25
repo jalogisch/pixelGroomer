@@ -41,22 +41,29 @@ All scripts automatically check if the venv exists and show an error pointing to
 
 ## Minimal Workflow
 
-**Every step is optional except the import itself.** The simplest workflow is:
+**Every step is optional.** The only requirement is at least one step. Examples:
 
 ```bash
+# Just import from SD card
 pg-import /Volumes/EOS_DIGITAL
+
+# Just develop existing RAWs
+pg-develop ~/Pictures/RAW/*.cr3 --output ~/Desktop/
+
+# Just set EXIF on existing photos
+pg-exif ~/Pictures/2026-01-24/ --author "Jan Doberstein"
 ```
 
-That is it. Photos are copied from the SD card to your archive. Everything else - EXIF tagging, album creation, RAW development, export - is optional and can be added as needed.
+Each tool works independently. Combine them as needed:
 
-| Step | Required? | Purpose |
-|------|-----------|---------|
-| **Import** | **Yes** (source path only) | Copy files from SD card to archive |
-| EXIF tagging | No | Set author, location, event metadata |
-| Albums | No | Organize selections with symlinks |
-| RAW Development | No | Convert RAW to JPG |
-| Export | No | Watermark, resize, compress for sharing |
-| Verify | No | Generate/check checksums |
+| Step | Purpose |
+|------|---------|
+| Import | Copy files from SD card to archive |
+| EXIF | Set author, location, event metadata |
+| Albums | Organize selections with symlinks |
+| Develop | Convert RAW to JPG |
+| Export | Watermark, resize, compress for sharing |
+| Verify | Generate/check checksums |
 
 Build your workflow from simple to complex based on your actual needs.
 
