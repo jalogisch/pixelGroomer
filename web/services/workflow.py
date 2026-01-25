@@ -15,6 +15,7 @@ class WorkflowService:
     def __init__(self, config: dict):
         self.config = config
         self.data_dir = config['DATA_DIR'] / 'workflows'
+        self.examples_dir = config['DATA_DIR'] / 'examples'
         self.pixelgroomer_root = config['PIXELGROOMER_ROOT']
         self.data_dir.mkdir(parents=True, exist_ok=True)
     
@@ -73,6 +74,47 @@ class WorkflowService:
             return True
         
         return False
+    
+    def list_examples(self) -> list[dict]:
+        """List all example workflows."""
+        examples = []
+        
+        if not self.examples_dir.exists():
+            return examples
+        
+        for filepath in self.examples_dir.glob('*.json'):
+            try:
+                with open(filepath) as f:
+                    workflow = json.load(f)
+                    examples.append({
+                        'id': workflow['id'],
+                        'name': workflow['name'],
+                        'description': workflow.get('description', ''),
+                        'category': workflow.get('category', 'general'),
+                        'steps_count': len(workflow.get('steps', [])),
+                    })
+            except (json.JSONDecodeError, KeyError):
+                continue
+        
+        # Sort by category then name
+        examples.sort(key=lambda e: (e['category'], e['name']))
+        return examples
+    
+    def load_example(self, example_id: str) -> Optional[dict]:
+        """Load an example workflow by ID."""
+        if not self.examples_dir.exists():
+            return None
+        
+        for filepath in self.examples_dir.glob('*.json'):
+            try:
+                with open(filepath) as f:
+                    workflow = json.load(f)
+                    if workflow.get('id') == example_id:
+                        return workflow
+            except (json.JSONDecodeError, KeyError):
+                continue
+        
+        return None
     
     def execute(self, steps: list[dict], dry_run: bool = False) -> dict:
         """Execute a workflow."""

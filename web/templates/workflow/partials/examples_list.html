@@ -1,0 +1,24 @@
+{% if examples %}
+<div class="examples-list">
+  {% for example in examples %}
+  <div class="example-item">
+    <div class="example-header">
+      <span class="example-name">{{ example.name }}</span>
+      <span class="example-badge">{{ example.steps_count }} steps</span>
+    </div>
+    <p class="example-description text-subdued text-small">
+      {{ example.description }}
+    </p>
+    <button class="btn btn-small btn-secondary"
+            hx-post="{{ url_for('api.load_example_workflow', example_id=example.id) }}"
+            hx-target="#workflow-steps"
+            hx-swap="innerHTML"
+            hx-confirm="Load this example? Current workflow will be replaced.">
+      Load
+    </button>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<p class="text-subdued text-small">No example workflows available.</p>
+{% endif %}

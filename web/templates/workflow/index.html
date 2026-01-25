@@ -113,16 +113,29 @@
         </div>
       </div>
       
+      <!-- Example Workflows -->
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">Example Workflows</h3>
+        </div>
+        <div class="card-body" 
+             hx-get="{{ url_for('api.list_example_workflows') }}"
+             hx-trigger="load"
+             hx-swap="innerHTML">
+          <p class="text-subdued text-small">Loading examples...</p>
+        </div>
+      </div>
+      
       <!-- Saved Workflows -->
       <div class="card">
         <div class="card-header">
           <h3 class="card-title">Saved Workflows</h3>
         </div>
-        <div class="card-body">
-          <p class="text-subdued text-small">
-            Load a previously saved workflow.
-          </p>
-          <!-- Would list saved workflows here -->
+        <div class="card-body"
+             hx-get="{{ url_for('api.list_saved_workflows') }}"
+             hx-trigger="load"
+             hx-swap="innerHTML">
+          <p class="text-subdued text-small">Loading...</p>
         </div>
       </div>
     </div>

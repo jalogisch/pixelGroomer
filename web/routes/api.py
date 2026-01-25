@@ -316,6 +316,66 @@ def save_workflow():
     )
 
 
+@api_bp.route('/workflow/examples', methods=['GET'])
+def list_example_workflows():
+    """List available example workflows."""
+    from services.workflow import WorkflowService
+    
+    service = WorkflowService(current_app.config)
+    examples = service.list_examples()
+    
+    return render_template(
+        'workflow/partials/examples_list.html',
+        examples=examples,
+    )
+
+
+@api_bp.route('/workflow/saved', methods=['GET'])
+def list_saved_workflows():
+    """List saved workflows."""
+    from services.workflow import WorkflowService
+    
+    service = WorkflowService(current_app.config)
+    workflows = service.list_workflows()
+    
+    return render_template(
+        'workflow/partials/saved_list.html',
+        workflows=workflows,
+    )
+
+
+@api_bp.route('/workflow/saved/<workflow_id>', methods=['DELETE'])
+def delete_workflow(workflow_id: str):
+    """Delete a saved workflow."""
+    from services.workflow import WorkflowService
+    
+    service = WorkflowService(current_app.config)
+    if service.delete(workflow_id):
+        return ''  # Empty response, item will be removed by htmx
+    return 'Workflow not found', 404
+
+
+@api_bp.route('/workflow/examples/<example_id>/load', methods=['POST'])
+def load_example_workflow(example_id: str):
+    """Load an example workflow into the current session."""
+    from services.workflow import WorkflowService
+    
+    service = WorkflowService(current_app.config)
+    workflow = service.load_example(example_id)
+    
+    if not workflow:
+        return 'Example not found', 404
+    
+    # Load into session
+    session['workflow_steps'] = workflow.get('steps', [])
+    session['workflow_name'] = workflow.get('name', '')
+    
+    # Resolve values for display
+    resolved_steps = _resolve_step_values(session['workflow_steps'])
+    
+    return render_template('workflow/partials/steps.html', steps=resolved_steps)
+
+
 @api_bp.route('/workflow/execute', methods=['POST'])
 def execute_workflow():
     """Execute the current workflow."""
