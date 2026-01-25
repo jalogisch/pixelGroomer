@@ -67,6 +67,16 @@ Before adding a dependency, ask:
 - Is the dependency well-maintained?
 - Does it add significant value over a simple implementation?
 
+## Workflow Design
+
+**Every workflow step must be optional.** The minimal workflow should be as simple as possible.
+
+For PixelGroomer:
+- Minimal workflow: `pg-import /Volumes/SD_CARD` (just copy files)
+- Everything else is optional: EXIF, albums, develop, export, verify
+
+Never force users through steps they do not need.
+
 ## Trade-offs
 
 KISS does not mean:
@@ -80,6 +90,7 @@ KISS means:
 - ✅ Starting simple, adding complexity only when needed
 - ✅ Preferring readable over clever code
 - ✅ Solving the actual problem, not hypothetical ones
+- ✅ Making every workflow step optional
 
 ## Project Examples
 

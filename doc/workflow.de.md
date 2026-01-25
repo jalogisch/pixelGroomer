@@ -39,6 +39,27 @@ Alle Scripts prüfen automatisch, ob das venv existiert und zeigen einen Fehler 
                     └─────────────┘     └─────────────┘
 ```
 
+## Minimaler Workflow
+
+**Jeder Schritt ist optional - nur der Import selbst ist erforderlich.** Der einfachste Workflow ist:
+
+```bash
+pg-import /Volumes/EOS_DIGITAL
+```
+
+Das war's. Fotos werden von der SD-Karte ins Archiv kopiert. Alles andere - EXIF-Tagging, Alben, RAW-Entwicklung, Export - ist optional und kann bei Bedarf hinzugefügt werden.
+
+| Schritt | Erforderlich? | Zweck |
+|---------|---------------|-------|
+| **Import** | **Ja** (nur Quellpfad) | Dateien von SD-Karte ins Archiv kopieren |
+| EXIF-Tagging | Nein | Autor, Ort, Event-Metadaten setzen |
+| Alben | Nein | Auswahl mit Symlinks organisieren |
+| RAW-Entwicklung | Nein | RAW zu JPG konvertieren |
+| Export | Nein | Wasserzeichen, Größe, Komprimierung für Teilen |
+| Verify | Nein | Checksums generieren/prüfen |
+
+Baue deinen Workflow von einfach zu komplex - basierend auf deinen tatsächlichen Anforderungen.
+
 ## Phase 1: Vorbereitung (optional)
 
 Vor dem Shooting kannst du eine `.import.yaml` auf der SD-Karte vorbereiten:
