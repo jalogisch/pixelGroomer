@@ -1,0 +1,32 @@
+{# Path picker input component with browse button #}
+{# Parameters: input_id, input_name, value, placeholder, mode (directory/file), label #}
+
+{% set input_id = input_id if input_id is defined else 'path-input' %}
+{% set input_name = input_name if input_name is defined else 'path' %}
+{% set value = value if value is defined else '' %}
+{% set placeholder = placeholder if placeholder is defined else '/path/to/directory' %}
+{% set mode = mode if mode is defined else 'directory' %}
+{% set label = label if label is defined else '' %}
+
+{% if label %}
+<label class="form-label" for="{{ input_id }}">{{ label }}</label>
+{% endif %}
+
+<div class="path-picker">
+  <input type="text" 
+         class="form-input path-picker-input"
+         id="{{ input_id }}"
+         name="{{ input_name }}"
+         value="{{ value }}"
+         placeholder="{{ placeholder }}">
+  
+  <button type="button" 
+          class="btn btn-secondary path-picker-btn"
+          hx-get="{{ url_for('api.browse_directory') }}"
+          hx-vals='{"target": "{{ input_id }}", "mode": "{{ mode }}", "path": ""}'
+          hx-target="#path-picker-modal-content"
+          hx-swap="innerHTML"
+          onclick="document.getElementById('path-picker-modal').showModal()">
+    Browse
+  </button>
+</div>

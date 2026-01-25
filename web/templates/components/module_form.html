@@ -60,8 +60,25 @@
            {% if param.max is defined %}max="{{ param.max }}"{% endif %}
            {% if param.required %}required{% endif %}>
     
+    {% elif param.type == 'path' %}
+    {# Path input with browser button #}
+    <div class="path-picker">
+      <input type="text"
+             class="form-input path-picker-input"
+             id="param-{{ param.id }}"
+             name="{{ param.id }}"
+             value="{{ params.get(param.id, param.default or '') }}"
+             placeholder="{{ param.placeholder or '' }}"
+             {% if param.required %}required{% endif %}>
+      <button type="button" 
+              class="btn btn-secondary path-picker-btn"
+              onclick="openPathPicker('param-{{ param.id }}', 'directory')">
+        Browse
+      </button>
+    </div>
+    
     {% else %}
-    {# Default: text input (also used for path type) #}
+    {# Default: text input #}
     <input type="text"
            class="form-input"
            id="param-{{ param.id }}"

@@ -1,0 +1,122 @@
+{# Path picker browser content - loaded into modal #}
+{% set contents = contents if contents is defined else {} %}
+{% set drives = drives if drives is defined else [] %}
+{% set quick_paths = quick_paths if quick_paths is defined else [] %}
+{% set target_input = target_input if target_input is defined else '' %}
+{% set mode = mode if mode is defined else 'directory' %}
+
+<div class="path-browser">
+  <!-- Sidebar: Drives & Quick Access -->
+  <div class="path-browser-sidebar">
+    <!-- USB/External Drives -->
+    {% if drives %}
+    <div class="path-browser-section">
+      <h4 class="path-browser-section-title">Drives</h4>
+      <ul class="path-browser-list">
+        {% for drive in drives %}
+        <li>
+          <button type="button"
+                  class="path-browser-item {% if drive.type == 'usb' %}path-browser-item-usb{% endif %}"
+                  hx-get="{{ url_for('api.browse_directory') }}"
+                  hx-vals='{"path": "{{ drive.path }}", "target": "{{ target_input }}", "mode": "{{ mode }}"}'
+                  hx-target="#path-picker-modal-content"
+                  hx-swap="innerHTML">
+            <span class="path-browser-icon path-browser-icon-{{ drive.icon }}"></span>
+            <span class="path-browser-name">{{ drive.name }}</span>
+            {% if drive.type == 'usb' %}
+            <span class="path-browser-badge">USB</span>
+            {% endif %}
+          </button>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+    
+    <!-- Quick Access -->
+    {% if quick_paths %}
+    <div class="path-browser-section">
+      <h4 class="path-browser-section-title">Quick Access</h4>
+      <ul class="path-browser-list">
+        {% for qp in quick_paths %}
+        <li>
+          <button type="button"
+                  class="path-browser-item"
+                  hx-get="{{ url_for('api.browse_directory') }}"
+                  hx-vals='{"path": "{{ qp.path }}", "target": "{{ target_input }}", "mode": "{{ mode }}"}'
+                  hx-target="#path-picker-modal-content"
+                  hx-swap="innerHTML">
+            <span class="path-browser-icon path-browser-icon-{{ qp.icon }}"></span>
+            <span class="path-browser-name">{{ qp.name }}</span>
+          </button>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+  </div>
+  
+  <!-- Main: Directory Contents -->
+  <div class="path-browser-main">
+    <!-- Current Path -->
+    <div class="path-browser-path">
+      <input type="text" 
+             class="form-input path-browser-path-input"
+             id="path-browser-current-path"
+             value="{{ contents.path }}"
+             readonly>
+    </div>
+    
+    <!-- Navigation -->
+    <div class="path-browser-nav">
+      {% if contents.parent %}
+      <button type="button"
+              class="btn btn-small"
+              hx-get="{{ url_for('api.browse_directory') }}"
+              hx-vals='{"path": "{{ contents.parent }}", "target": "{{ target_input }}", "mode": "{{ mode }}"}'
+              hx-target="#path-picker-modal-content"
+              hx-swap="innerHTML">
+        &uarr; Up
+      </button>
+      {% endif %}
+    </div>
+    
+    <!-- Directory List -->
+    <div class="path-browser-contents">
+      {% if contents.directories %}
+      <ul class="path-browser-list path-browser-dir-list">
+        {% for dir in contents.directories %}
+        <li>
+          <button type="button"
+                  class="path-browser-item path-browser-dir"
+                  hx-get="{{ url_for('api.browse_directory') }}"
+                  hx-vals='{"path": "{{ dir.path }}", "target": "{{ target_input }}", "mode": "{{ mode }}"}'
+                  hx-target="#path-picker-modal-content"
+                  hx-swap="innerHTML"
+                  data-path="{{ dir.path }}">
+            <span class="path-browser-icon path-browser-icon-folder"></span>
+            <span class="path-browser-name">{{ dir.name }}</span>
+          </button>
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p class="text-subdued text-small">No subdirectories</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Actions -->
+<div class="path-browser-actions">
+  <button type="button" 
+          class="btn btn-secondary"
+          onclick="document.getElementById('path-picker-modal').close()">
+    Cancel
+  </button>
+  <button type="button" 
+          class="btn btn-primary"
+          onclick="selectPath('{{ target_input }}', '{{ contents.path }}')">
+    Select This Folder
+  </button>
+</div>

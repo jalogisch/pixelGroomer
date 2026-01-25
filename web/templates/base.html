@@ -54,6 +54,20 @@
     </main>
   </div>
   
+  <!-- Path Picker Modal -->
+  <dialog id="path-picker-modal" class="path-picker-modal">
+    <div class="path-picker-modal-header">
+      <h3>Select Path</h3>
+      <button type="button" class="btn btn-small btn-secondary" 
+              onclick="document.getElementById('path-picker-modal').close()">
+        &times;
+      </button>
+    </div>
+    <div class="path-picker-modal-body" id="path-picker-modal-content">
+      <!-- Content loaded via HTMX -->
+    </div>
+  </dialog>
+  
   <!-- HTMX -->
   <script src="{{ url_for('static', filename='js/htmx.min.js') }}"></script>
   

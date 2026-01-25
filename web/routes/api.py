@@ -1,5 +1,6 @@
 """API routes for HTMX interactions."""
 from flask import Blueprint, request, session, current_app, render_template, jsonify
+from services.filesystem import FilesystemService
 
 api_bp = Blueprint('api', __name__, url_prefix='/api')
 
@@ -284,3 +285,55 @@ def export_album(album_name: str):
         'album/partials/export_result.html',
         result=result,
     )
+
+
+# ============================================================================
+# Filesystem Browser
+# ============================================================================
+
+@api_bp.route('/filesystem/drives', methods=['GET'])
+def get_drives():
+    """Get list of mounted drives/volumes."""
+    service = FilesystemService(current_app.config)
+    drives = service.get_drives()
+    quick_paths = service.get_quick_paths()
+    
+    return render_template(
+        'components/path_picker_drives.html',
+        drives=drives,
+        quick_paths=quick_paths,
+    )
+
+
+@api_bp.route('/filesystem/browse', methods=['GET'])
+def browse_directory():
+    """Browse a directory."""
+    path = request.args.get('path', '')
+    target_input = request.args.get('target', '')
+    mode = request.args.get('mode', 'directory')  # 'directory' or 'file'
+    
+    service = FilesystemService(current_app.config)
+    
+    # Default to home if no path
+    if not path:
+        path = str(Path.home())
+    
+    contents = service.list_directory(path)
+    drives = service.get_drives()
+    quick_paths = service.get_quick_paths()
+    
+    if contents is None:
+        # Path not accessible, go to home
+        contents = service.list_directory(str(Path.home()))
+    
+    return render_template(
+        'components/path_picker_browser.html',
+        contents=contents,
+        drives=drives,
+        quick_paths=quick_paths,
+        target_input=target_input,
+        mode=mode,
+    )
+
+
+from pathlib import Path

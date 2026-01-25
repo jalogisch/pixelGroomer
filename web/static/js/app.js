@@ -267,3 +267,52 @@ document.body.addEventListener('htmx:afterRequest', function(e) {
     indicator.style.opacity = '0';
   }
 });
+
+/**
+ * Path picker functions
+ */
+
+/**
+ * Select a path and put it in the target input
+ */
+function selectPath(targetInputId, path) {
+  const input = document.getElementById(targetInputId);
+  if (input) {
+    input.value = path;
+    // Trigger input event for form persistence
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+  // Close modal
+  const modal = document.getElementById('path-picker-modal');
+  if (modal) {
+    modal.close();
+  }
+}
+
+/**
+ * Open path picker for a specific input
+ */
+function openPathPicker(targetInputId, mode) {
+  mode = mode || 'directory';
+  const modal = document.getElementById('path-picker-modal');
+  const content = document.getElementById('path-picker-modal-content');
+  
+  if (!modal || !content) return;
+  
+  // Get current value from input to start browsing there
+  const input = document.getElementById(targetInputId);
+  const currentPath = input ? input.value : '';
+  
+  // Load browser content via HTMX
+  htmx.ajax('GET', '/api/filesystem/browse', {
+    target: content,
+    swap: 'innerHTML',
+    values: {
+      path: currentPath,
+      target: targetInputId,
+      mode: mode
+    }
+  });
+  
+  modal.showModal();
+}
