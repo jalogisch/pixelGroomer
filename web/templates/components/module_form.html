@@ -2,6 +2,7 @@
 {% set module = module if module is defined else (modules[0] if modules else none) %}
 {% set step_id = step_id if step_id is defined else 0 %}
 {% set params = params if params is defined else {} %}
+{% set locked_params = locked_params if locked_params is defined else {} %}
 
 {% if module %}
 <form hx-post="{{ url_for('api.add_workflow_step') }}"
@@ -62,7 +63,22 @@
            {% if param.required %}required{% endif %}>
     
     {% elif param.type == 'path' %}
-    {# Path input with browser button #}
+    {# Path input with browser button - may be locked from import step #}
+    {% if param.id in locked_params %}
+    {# Locked field - read-only with explanation #}
+    <div class="path-picker path-locked">
+      <input type="hidden" name="{{ param.id }}" value="{{ params.get(param.id, param.default or '') }}">
+      <input type="text"
+             class="form-input path-picker-input"
+             id="param-{{ param.id }}-display"
+             value="{{ params.get(param.id, param.default or '') }}"
+             readonly
+             disabled>
+      <span class="locked-indicator" title="{{ locked_params[param.id] }}">🔒</span>
+    </div>
+    <p class="text-subdued text-small mt-1">{{ locked_params[param.id] }}</p>
+    {% else %}
+    {# Normal editable path field #}
     <div class="path-picker">
       <input type="text"
              class="form-input path-picker-input"
@@ -80,6 +96,7 @@
     </div>
     {% if param.help %}
     <p class="text-subdued text-small mt-1">{{ param.help }}</p>
+    {% endif %}
     {% endif %}
     
     {% else %}

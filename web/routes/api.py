@@ -158,20 +158,29 @@ def get_module_form(module_id: str):
     inherited_params = _get_inherited_params(module)
     
     # Resolve template variables in defaults (e.g. {{PHOTO_LIBRARY}})
-    params = _resolve_defaults(module, inherited_params)
+    params, locked_params = _resolve_defaults(module, inherited_params)
     
     return render_template(
         'components/module_form.html',
         module=module,
         step_id=step_id,
         params=params,
+        locked_params=locked_params,
     )
 
 
 def _get_inherited_params(module) -> dict:
-    """Get parameter values inherited from previous workflow steps."""
+    """Get parameter values inherited from previous workflow steps.
+    
+    Returns dict with:
+      - param_id: value for simple inheritance
+      - param_id: {'value': ..., 'locked': True, 'reason': ...} for locked params
+    """
     steps = session.get('workflow_steps', [])
     inherited = {}
+    
+    # Check if import step exists (provides dynamic directories based on photo dates)
+    has_import_step = any(s.get('module_id') == 'import' for s in steps)
     
     # Build a map of all outputs from previous steps
     outputs = {}
@@ -191,14 +200,37 @@ def _get_inherited_params(module) -> dict:
     for param in module.parameters:
         inherit_from = param.get('inherit_from')
         if inherit_from and inherit_from in outputs:
-            inherited[param['id']] = outputs[inherit_from]
+            # If import step exists and this inherits target_directory,
+            # lock it because import creates multiple date-based directories
+            if has_import_step and inherit_from == 'target_directory':
+                inherited[param['id']] = {
+                    'value': outputs[inherit_from],
+                    'locked': True,
+                    'reason': 'Automatically set from import step (may create multiple date-based directories)'
+                }
+            else:
+                inherited[param['id']] = outputs[inherit_from]
     
     return inherited
 
 
-def _resolve_defaults(module, inherited_params: dict) -> dict:
-    """Resolve template variables in parameter defaults."""
-    params = dict(inherited_params)
+def _resolve_defaults(module, inherited_params: dict) -> tuple:
+    """Resolve template variables in parameter defaults.
+    
+    Returns:
+        tuple: (params dict, locked_params dict with reasons)
+    """
+    params = {}
+    locked_params = {}
+    
+    # Process inherited params
+    for param_id, value in inherited_params.items():
+        if isinstance(value, dict) and value.get('locked'):
+            # This is a locked param
+            locked_params[param_id] = value['reason']
+            params[param_id] = value['value']
+        else:
+            params[param_id] = value
     
     for param in module.parameters:
         param_id = param['id']
@@ -226,7 +258,7 @@ def _resolve_defaults(module, inherited_params: dict) -> dict:
                     os.environ.get('DEFAULT_AUTHOR', '')
                 )
     
-    return params
+    return params, locked_params
 
 
 @api_bp.route('/workflow/save', methods=['POST'])

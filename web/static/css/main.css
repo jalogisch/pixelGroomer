@@ -780,6 +780,25 @@ details.collapsible:not([open]) .card-body {
   gap: 0.5rem;
 }
 
+.path-picker.path-locked {
+  position: relative;
+}
+
+.path-picker.path-locked input {
+  background-color: var(--color-bg-secondary);
+  cursor: not-allowed;
+  opacity: 0.8;
+}
+
+.locked-indicator {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1rem;
+  cursor: help;
+}
+
 .path-picker-input {
   flex: 1;
 }
