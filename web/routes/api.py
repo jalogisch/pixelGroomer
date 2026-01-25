@@ -213,12 +213,21 @@ def execute_workflow():
 # Photos
 # ============================================================================
 
+def _get_library_config():
+    """Get config with custom library path from session if set."""
+    config = dict(current_app.config)
+    custom_path = session.get('album_library_path')
+    if custom_path and Path(custom_path).exists():
+        config['PHOTO_LIBRARY'] = custom_path
+    return config
+
+
 @api_bp.route('/photos/<path:folder>')
 def get_photos(folder: str):
     """Get photos in a folder."""
     from services.library import LibraryService
     
-    library = LibraryService(current_app.config)
+    library = LibraryService(_get_library_config())
     photos = library.get_photos(folder)
     
     return render_template(
@@ -234,11 +243,16 @@ def get_thumbnail(photo_path: str):
     from services.library import LibraryService
     from flask import send_file
     
-    library = LibraryService(current_app.config)
+    library = LibraryService(_get_library_config())
     thumbnail_path = library.get_thumbnail(photo_path)
     
     if thumbnail_path and thumbnail_path.exists():
         return send_file(thumbnail_path, mimetype='image/jpeg')
+    
+    # If no thumbnail, try to serve the original image directly for JPGs
+    full_path = Path(library.library_path) / photo_path
+    if full_path.exists() and full_path.suffix.lower() in {'.jpg', '.jpeg', '.png', '.gif', '.webp'}:
+        return send_file(full_path)
     
     return '', 404
 
@@ -251,7 +265,7 @@ def rate_photo(photo_path: str):
     rating = int(request.form.get('rating', 0))
     rating = max(0, min(5, rating))
     
-    library = LibraryService(current_app.config)
+    library = LibraryService(_get_library_config())
     library.set_rating(photo_path, rating)
     
     return render_template(
