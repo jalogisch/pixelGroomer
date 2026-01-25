@@ -32,6 +32,11 @@ def _resolve_step_values(steps: list) -> list:
         'DEFAULT_AUTHOR': os.environ.get('DEFAULT_AUTHOR', ''),
     }
     
+    # Runtime placeholders that are resolved during execution
+    runtime_placeholders = {
+        '{SOURCE}': 'replaced with each source directory at runtime',
+    }
+    
     resolved = []
     for step in steps:
         resolved_step = {
@@ -49,7 +54,7 @@ def _resolve_step_values(steps: list) -> list:
             resolved_value = str_value
             explanation = None
             
-            # Check for template variables
+            # Check for config template variables {{VAR}}
             if '{{' in str_value and '}}' in str_value:
                 for var_name, var_value in config_values.items():
                     placeholder = '{{' + var_name + '}}'
@@ -58,6 +63,11 @@ def _resolve_step_values(steps: list) -> list:
                             resolved_value = str_value.replace(placeholder, var_value)
                         else:
                             explanation = f"from config: {var_name}"
+            
+            # Check for runtime placeholders {VAR}
+            for placeholder, desc in runtime_placeholders.items():
+                if placeholder in str_value:
+                    explanation = desc
             
             resolved_step['params'][key] = {
                 'value': resolved_value,

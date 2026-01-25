@@ -17,9 +17,10 @@ parameters:
   - id: output
     type: path
     label: Output Directory
-    placeholder: ~/Pictures/PhotoLibrary/2026-01-24/developed
+    placeholder: "{SOURCE}/developed"
+    default: "{SOURCE}/developed"
     cli_flag: --output
-    help: "Where to save developed JPGs. Defaults to 'developed' subfolder."
+    help: "Use {SOURCE} as placeholder for the source directory. Example: {SOURCE}/developed creates 'developed' subfolder in each source directory."
     
   - id: processor
     type: select
