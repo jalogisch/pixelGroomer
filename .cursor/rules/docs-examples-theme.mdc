@@ -1,0 +1,117 @@
+---
+description: Consistent theme and terminology for documentation and examples
+globs: doc/*.md, examples/*.sh, README*.md, templates/*
+alwaysApply: false
+---
+
+# Documentation & Examples Theme
+
+All documentation and examples use a consistent theme around **motorcycle adventure photography**.
+
+## Target Audience
+
+The user is an adventure motorcycle rider and photographer who:
+- Attends enduro training events
+- Participates in motorcycle rallies and meets
+- Takes motorcycle holidays / tours
+- Photographs at off-road and adventure events
+
+## Example Event Types
+
+Use these event types in documentation and examples:
+
+| Event Type | Example Names |
+|------------|---------------|
+| Enduro training | "Endurotraining", "GS Trophy Training" |
+| Rally/Competition | "Erzbergrodeo", "Red Bull Romaniacs", "Sea to Sky" |
+| Motorcycle tour | "Alps Tour", "Pyrenees Adventure", "Norway Crossing" |
+| Bike meet/gathering | "GS Treffen", "Adventure Meeting", "BMW Motorrad Days" |
+| Off-road workshop | "Trail Riding Workshop", "Navigation Training" |
+
+## Example Locations
+
+Use real locations that fit the motorcycle/adventure theme:
+
+| Location | GPS | Context |
+|----------|-----|---------|
+| Stadtoldendorf | 51.875222,9.648111 | Enduro training at enduroXperience |
+| Erzberg, Austria | 47.4833,14.9833 | Famous hard enduro competition |
+| Sölk Pass, Austria | 47.2833,14.0833 | Scenic alpine motorcycle route |
+| Mandello del Lario | 46.0667,9.3167 | Moto Guzzi factory/museum |
+| Dolomites, Italy | 46.4333,11.8500 | Classic motorcycle touring region |
+
+## Terminology
+
+Use these terms consistently:
+
+### Events
+- **Event** (not "shoot", "session") - A motorcycle event being photographed
+- **Training day** / **Training weekend** - Enduro or off-road instruction
+- **Tour** - Multi-day motorcycle journey
+- **Meet** / **Gathering** - Motorcycle rider meetup
+
+### Photography
+- **Action shots** - Photos of riders in motion
+- **Pit photos** - Photos in service/rest areas
+- **Landscape shots** - Scenic photos during tours
+- **Group photos** - Rider gatherings
+
+### File naming in examples
+- Use event-related names: `Endurotraining`, `AlpsTour`, `GSTreffen`
+- Avoid generic names like "Wedding", "Birthday", "Family"
+
+## Example Patterns
+
+### Good examples
+
+```bash
+# Import from enduro event
+pg-import /Volumes/EOS_DIGITAL --event "Endurotraining" --location "Stadtoldendorf"
+
+# Album for tour highlights
+pg-album create "Alps_Tour_2026"
+
+# Export for event participants
+pg-album export "GS_Treffen_Highlights" --to ~/Desktop/ForRiders/
+```
+
+### Avoid
+
+```bash
+# ❌ Generic non-motorcycle examples
+pg-import /Volumes/SD --event "Wedding" --location "Berlin"
+pg-album create "Birthday_Party"
+```
+
+## .import.yaml Examples
+
+```yaml
+# Enduro training
+event: "Endurotraining Tag 1"
+location: "Stadtoldendorf"
+tags:
+  - enduro
+  - offroad
+  - training
+
+# Motorcycle tour
+event: "Alps Tour 2026"
+location: "Sölk Pass"
+tags:
+  - tour
+  - alps
+  - adventure
+```
+
+## Watermark Examples
+
+- "Jan Doberstein - enduroXperience"
+- "pixelpiste"
+- Event name + photographer
+
+## Synchronization Requirement
+
+When updating examples in documentation:
+1. Check if the same example exists in other doc files
+2. Update all language versions (EN and DE)
+3. Verify example scripts match the documented examples
