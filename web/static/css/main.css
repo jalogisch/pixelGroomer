@@ -550,6 +550,28 @@ h4 { font-size: 1.125rem; }
   display: none !important;
 }
 
+/* Photo Info Grid */
+.photo-info-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.photo-info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.photo-info-item .text-subdued {
+  font-size: 0.75rem;
+}
+
+.photo-info-item strong,
+.photo-info-item a {
+  word-break: break-word;
+}
+
 /* HTMX loading indicator */
 .htmx-indicator {
   opacity: 0;

@@ -70,7 +70,7 @@ class LibraryService:
         return photos
     
     def get_photo_info(self, photo_path: str) -> Optional[dict]:
-        """Get information about a photo."""
+        """Get information about a photo including EXIF metadata."""
         full_path = self.library_path / photo_path
         
         if not full_path.exists():
@@ -98,6 +98,107 @@ class LibraryService:
                     info['dimensions'] = f"{img.width} x {img.height}"
             except Exception:
                 pass
+        
+        # Get EXIF metadata
+        exif_info = self._get_exif_info(full_path)
+        info.update(exif_info)
+        
+        return info
+    
+    def _get_exif_info(self, photo_path: Path) -> dict:
+        """Extract EXIF metadata using exiftool."""
+        info = {}
+        
+        try:
+            import json as json_module
+            
+            # Use exiftool to get metadata
+            result = subprocess.run(
+                [
+                    'exiftool', '-j',
+                    '-Artist', '-Author', '-Creator', '-Copyright',
+                    '-Make', '-Model', '-LensModel', '-LensInfo', '-Lens',
+                    '-GPSLatitude', '-GPSLongitude', '-GPSPosition',
+                    '-DateTimeOriginal', '-CreateDate',
+                    '-ExposureTime', '-FNumber', '-ISO', '-FocalLength',
+                    '-ImageWidth', '-ImageHeight',
+                    str(photo_path)
+                ],
+                capture_output=True,
+                text=True,
+                timeout=5
+            )
+            
+            if result.returncode == 0 and result.stdout:
+                data = json_module.loads(result.stdout)
+                if data and len(data) > 0:
+                    exif = data[0]
+                    
+                    # Author/Artist
+                    author = exif.get('Artist') or exif.get('Author') or exif.get('Creator')
+                    if author:
+                        info['author'] = author
+                    
+                    # Copyright
+                    if exif.get('Copyright'):
+                        info['copyright'] = exif['Copyright']
+                    
+                    # Camera
+                    make = exif.get('Make', '').strip()
+                    model = exif.get('Model', '').strip()
+                    if make and model:
+                        # Remove make from model if it's duplicated
+                        if model.lower().startswith(make.lower()):
+                            info['camera'] = model
+                        else:
+                            info['camera'] = f"{make} {model}"
+                    elif model:
+                        info['camera'] = model
+                    
+                    # Lens
+                    lens = exif.get('LensModel') or exif.get('Lens') or exif.get('LensInfo')
+                    if lens:
+                        info['lens'] = lens
+                    
+                    # GPS
+                    gps_pos = exif.get('GPSPosition')
+                    if gps_pos:
+                        info['gps'] = gps_pos
+                    elif exif.get('GPSLatitude') and exif.get('GPSLongitude'):
+                        info['gps'] = f"{exif['GPSLatitude']}, {exif['GPSLongitude']}"
+                    
+                    # Date taken
+                    date_taken = exif.get('DateTimeOriginal') or exif.get('CreateDate')
+                    if date_taken:
+                        info['date_taken'] = date_taken
+                    
+                    # Exposure settings
+                    exposure_parts = []
+                    if exif.get('ExposureTime'):
+                        info['shutter'] = exif['ExposureTime']
+                        exposure_parts.append(exif['ExposureTime'])
+                    if exif.get('FNumber'):
+                        info['aperture'] = f"f/{exif['FNumber']}"
+                        exposure_parts.append(f"f/{exif['FNumber']}")
+                    if exif.get('ISO'):
+                        info['iso'] = f"ISO {exif['ISO']}"
+                        exposure_parts.append(f"ISO {exif['ISO']}")
+                    if exif.get('FocalLength'):
+                        info['focal_length'] = exif['FocalLength']
+                        exposure_parts.append(exif['FocalLength'])
+                    
+                    if exposure_parts:
+                        info['exposure'] = ' | '.join(exposure_parts)
+                    
+                    # Dimensions from EXIF (useful for RAW files)
+                    if exif.get('ImageWidth') and exif.get('ImageHeight'):
+                        if 'dimensions' not in info:
+                            info['dimensions'] = f"{exif['ImageWidth']} x {exif['ImageHeight']}"
+                            info['width'] = exif['ImageWidth']
+                            info['height'] = exif['ImageHeight']
+                    
+        except (subprocess.TimeoutExpired, FileNotFoundError, Exception):
+            pass
         
         return info
     

@@ -63,25 +63,81 @@
       </div>
       <div class="card-body">
         {% if photo_info %}
-        <div class="text-small">
-          <div class="mb-2">
-            <span class="text-subdued">File:</span><br>
+        <div class="text-small photo-info-grid">
+          <div class="photo-info-item">
+            <span class="text-subdued">File:</span>
             <strong>{{ photo_info.name }}</strong>
           </div>
-          <div class="mb-2">
+          
+          {% if photo_info.date_taken %}
+          <div class="photo-info-item">
+            <span class="text-subdued">Date:</span>
+            {{ photo_info.date_taken }}
+          </div>
+          {% endif %}
+          
+          <div class="photo-info-item">
             <span class="text-subdued">Size:</span>
             {{ photo_info.size_human }}
           </div>
+          
           {% if photo_info.dimensions %}
-          <div class="mb-2">
+          <div class="photo-info-item">
             <span class="text-subdued">Dimensions:</span>
             {{ photo_info.dimensions }}
           </div>
           {% endif %}
+          
           {% if photo_info.is_raw %}
-          <div class="mb-2">
+          <div class="photo-info-item">
             <span class="text-subdued">Type:</span>
             RAW ({{ photo_info.extension }})
+          </div>
+          {% endif %}
+          
+          {% if photo_info.camera %}
+          <div class="photo-info-item">
+            <span class="text-subdued">Camera:</span>
+            {{ photo_info.camera }}
+          </div>
+          {% endif %}
+          
+          {% if photo_info.lens %}
+          <div class="photo-info-item">
+            <span class="text-subdued">Lens:</span>
+            {{ photo_info.lens }}
+          </div>
+          {% endif %}
+          
+          {% if photo_info.exposure %}
+          <div class="photo-info-item">
+            <span class="text-subdued">Exposure:</span>
+            {{ photo_info.exposure }}
+          </div>
+          {% endif %}
+          
+          {% if photo_info.author %}
+          <div class="photo-info-item">
+            <span class="text-subdued">Author:</span>
+            {{ photo_info.author }}
+          </div>
+          {% endif %}
+          
+          {% if photo_info.copyright %}
+          <div class="photo-info-item">
+            <span class="text-subdued">Copyright:</span>
+            {{ photo_info.copyright }}
+          </div>
+          {% endif %}
+          
+          {% if photo_info.gps %}
+          <div class="photo-info-item">
+            <span class="text-subdued">GPS:</span>
+            <a href="https://www.google.com/maps?q={{ photo_info.gps | urlencode }}" 
+               target="_blank" 
+               rel="noopener">
+              {{ photo_info.gps }}
+            </a>
           </div>
           {% endif %}
         </div>
