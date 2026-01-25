@@ -1,0 +1,260 @@
+#!/usr/bin/env bash
+# pg-setup-darktable - Create symlink for darktable-cli
+#
+# Finds darktable-cli in common locations and creates a symlink
+# so it can be called directly from the command line.
+
+set -euo pipefail
+
+# Colors
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+log_info() { echo -e "${BLUE}[INFO]${NC} $*"; }
+log_success() { echo -e "${GREEN}[OK]${NC} $*"; }
+log_warn() { echo -e "${YELLOW}[WARN]${NC} $*"; }
+log_error() { echo -e "${RED}[ERROR]${NC} $*" >&2; }
+
+show_help() {
+    cat << 'EOF'
+Usage: pg-setup-darktable [OPTIONS]
+
+Create a symlink for darktable-cli so it can be called from PATH.
+
+Options:
+    -h, --help          Show this help message
+    -c, --check         Only check if darktable-cli is available
+    -p, --path DIR      Custom directory for symlink (default: /usr/local/bin)
+    -f, --force         Overwrite existing symlink
+
+Examples:
+    pg-setup-darktable              # Create symlink in /usr/local/bin
+    pg-setup-darktable --check      # Just check if darktable-cli is found
+    pg-setup-darktable -p ~/bin     # Create symlink in ~/bin
+EOF
+}
+
+# Known darktable-cli locations
+DARKTABLE_SEARCH_PATHS=(
+    "/Applications/darktable.app/Contents/MacOS/darktable-cli"
+    "/Applications/Darktable.app/Contents/MacOS/darktable-cli"
+    "$HOME/Applications/darktable.app/Contents/MacOS/darktable-cli"
+    "/opt/homebrew/bin/darktable-cli"
+    "/usr/local/bin/darktable-cli"
+    "/usr/bin/darktable-cli"
+    "/snap/bin/darktable-cli"
+)
+
+# Find darktable-cli binary
+find_darktable_cli() {
+    # First check if already in PATH
+    if command -v darktable-cli &>/dev/null; then
+        command -v darktable-cli
+        return 0
+    fi
+
+    # Search known locations
+    for path in "${DARKTABLE_SEARCH_PATHS[@]}"; do
+        if [[ -x "$path" ]]; then
+            echo "$path"
+            return 0
+        fi
+    done
+
+    return 1
+}
+
+# Get darktable version
+get_version() {
+    local cli_path="$1"
+    "$cli_path" --version 2>&1 | head -1 | sed 's/darktable //'
+}
+
+# Check-only mode
+check_darktable() {
+    log_info "Checking for darktable-cli..."
+
+    if command -v darktable-cli &>/dev/null; then
+        local cli_path
+        cli_path=$(command -v darktable-cli)
+        local version
+        version=$(get_version "$cli_path")
+        log_success "darktable-cli $version found in PATH"
+        log_info "Location: $cli_path"
+        return 0
+    fi
+
+    local found_path
+    if found_path=$(find_darktable_cli); then
+        local version
+        version=$(get_version "$found_path")
+        log_warn "darktable-cli $version found but not in PATH"
+        log_info "Location: $found_path"
+        echo ""
+        echo "Run this script without --check to create a symlink."
+        return 0
+    fi
+
+    log_error "darktable-cli not found!"
+    echo ""
+    echo "Please install darktable:"
+    echo "  macOS:  brew install --cask darktable"
+    echo "          or download from https://www.darktable.org"
+    echo "  Ubuntu: sudo apt install darktable"
+    return 1
+}
+
+# Create symlink
+create_symlink() {
+    local target_dir="$1"
+    local force="$2"
+
+    # Find darktable-cli
+    local cli_path
+    if ! cli_path=$(find_darktable_cli); then
+        log_error "darktable-cli not found!"
+        echo ""
+        echo "Please install darktable first:"
+        echo "  macOS:  brew install --cask darktable"
+        echo "          or download from https://www.darktable.org"
+        echo "  Ubuntu: sudo apt install darktable"
+        return 1
+    fi
+
+    local version
+    version=$(get_version "$cli_path")
+    log_success "Found darktable-cli $version"
+    log_info "Location: $cli_path"
+
+    # Check if already in PATH (not as symlink target)
+    if command -v darktable-cli &>/dev/null; then
+        local current_path
+        current_path=$(command -v darktable-cli)
+        if [[ "$current_path" == "$cli_path" ]] || [[ -L "$current_path" && "$(readlink "$current_path")" == "$cli_path" ]]; then
+            log_success "darktable-cli is already available in PATH"
+            return 0
+        fi
+    fi
+
+    # Expand ~ in target_dir
+    target_dir="${target_dir/#\~/$HOME}"
+
+    local symlink_path="${target_dir}/darktable-cli"
+
+    # Check target directory
+    if [[ ! -d "$target_dir" ]]; then
+        log_error "Target directory does not exist: $target_dir"
+        echo ""
+        echo "Create it with: mkdir -p \"$target_dir\""
+        return 1
+    fi
+
+    # Check if symlink already exists
+    if [[ -e "$symlink_path" || -L "$symlink_path" ]]; then
+        if [[ "$force" != "true" ]]; then
+            if [[ -L "$symlink_path" ]]; then
+                local current_target
+                current_target=$(readlink "$symlink_path")
+                log_warn "Symlink already exists: $symlink_path -> $current_target"
+            else
+                log_warn "File already exists: $symlink_path"
+            fi
+            echo "Use --force to overwrite."
+            return 1
+        fi
+        log_info "Removing existing symlink..."
+        rm -f "$symlink_path"
+    fi
+
+    # Check write permission
+    if [[ ! -w "$target_dir" ]]; then
+        log_warn "Need sudo to write to $target_dir"
+        echo ""
+        echo "Run with sudo:"
+        echo "  sudo $0 -p \"$target_dir\""
+        echo ""
+        echo "Or use a directory you own:"
+        echo "  $0 -p ~/bin"
+        return 1
+    fi
+
+    # Create symlink
+    log_info "Creating symlink..."
+    ln -s "$cli_path" "$symlink_path"
+
+    log_success "Symlink created: $symlink_path -> $cli_path"
+
+    # Check if target_dir is in PATH
+    if [[ ":$PATH:" != *":$target_dir:"* ]]; then
+        log_warn "$target_dir is not in your PATH"
+        echo ""
+        echo "Add to your shell profile (~/.zshrc or ~/.bashrc):"
+        echo ""
+        echo "  export PATH=\"\$PATH:$target_dir\""
+        echo ""
+    fi
+
+    # Verify it works
+    echo ""
+    log_info "Verifying installation..."
+    if "$symlink_path" --version &>/dev/null; then
+        log_success "darktable-cli is ready to use!"
+    else
+        log_error "Verification failed - symlink may be broken"
+        return 1
+    fi
+}
+
+# Main
+main() {
+    local check_only=false
+    local target_dir="/usr/local/bin"
+    local force=false
+
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            -h|--help)
+                show_help
+                exit 0
+                ;;
+            -c|--check)
+                check_only=true
+                shift
+                ;;
+            -p|--path)
+                if [[ -z "${2:-}" ]]; then
+                    log_error "--path requires a directory argument"
+                    exit 1
+                fi
+                target_dir="$2"
+                shift 2
+                ;;
+            -f|--force)
+                force=true
+                shift
+                ;;
+            *)
+                log_error "Unknown option: $1"
+                echo "Use --help for usage information."
+                exit 1
+                ;;
+        esac
+    done
+
+    echo ""
+    echo "╔═══════════════════════════════════════╗"
+    echo "║    darktable-cli Setup                ║"
+    echo "╚═══════════════════════════════════════╝"
+    echo ""
+
+    if [[ "$check_only" == "true" ]]; then
+        check_darktable
+    else
+        create_symlink "$target_dir" "$force"
+    fi
+}
+
+main "$@"
