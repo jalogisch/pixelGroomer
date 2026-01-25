@@ -1,21 +1,51 @@
-{# Album assignment checkboxes - inline tag style #}
+{# Album assignment - show recent + dropdown for others #}
 {% set photo_path = photo_path if photo_path is defined else current_photo %}
 {% set photo_albums = photo_albums if photo_albums is defined else [] %}
+{% set max_visible = 3 %}
 
 {% if albums %}
+{# Split into: 1) assigned to this photo, 2) recently used, 3) others #}
+{% set assigned = [] %}
+{% set others = [] %}
 {% for album in albums %}
-<label class="album-checkbox {% if album.name in photo_albums %}checked{% endif %}"
+  {% if album.name in photo_albums %}
+    {% set _ = assigned.append(album) %}
+  {% else %}
+    {% set _ = others.append(album) %}
+  {% endif %}
+{% endfor %}
+
+{# Show assigned albums as tags #}
+{% for album in assigned %}
+<label class="album-checkbox checked"
        hx-post="{{ url_for('api.toggle_photo_album', photo_path=photo_path) }}"
-       hx-vals='{"album": "{{ album.name }}", "action": "toggle"}'
+       hx-vals='{"album": "{{ album.name }}", "action": "remove"}'
        hx-target="#album-checkboxes"
        hx-swap="innerHTML"
-       hx-trigger="click">
-  <input type="checkbox" 
-         {% if album.name in photo_albums %}checked{% endif %}
-         style="display: none;">
-  {{ album.name }}
+       hx-trigger="click"
+       title="Click to remove from {{ album.name }}">
+  ✓ {{ album.name }}
 </label>
 {% endfor %}
+
+{# Show dropdown for adding to other albums #}
+{% if others %}
+<select class="album-dropdown"
+        hx-post="{{ url_for('api.toggle_photo_album', photo_path=photo_path) }}"
+        hx-target="#album-checkboxes"
+        hx-swap="innerHTML"
+        hx-trigger="change"
+        hx-include="this"
+        name="album"
+        onchange="if(this.value) { htmx.trigger(this, 'change'); this.value=''; }">
+  <option value="">+ Add to album...</option>
+  {% for album in others %}
+  <option value="{{ album.name }}">{{ album.name }} ({{ album.photo_count }})</option>
+  {% endfor %}
+</select>
+<input type="hidden" name="action" value="add">
+{% endif %}
+
 {% else %}
 <span class="text-subdued text-small">No albums yet →</span>
 {% endif %}

@@ -623,6 +623,28 @@ h4 { font-size: 1.125rem; }
   color: var(--color-text-inverse);
 }
 
+/* Album dropdown for adding */
+.album-dropdown {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.8125rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+  background-color: var(--color-background);
+  color: var(--color-text-subdued);
+  cursor: pointer;
+  min-width: 140px;
+}
+
+.album-dropdown:hover {
+  border-color: var(--color-primary);
+}
+
+.album-dropdown:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px var(--color-primary-transparent);
+}
+
 /* Collapsible Cards */
 .card.collapsible {
   overflow: hidden;
