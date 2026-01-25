@@ -20,14 +20,23 @@
       </div>
       <div class="card-body">
         {% if step.params %}
-        <div class="text-small">
-          {% for key, value in step.params.items() %}
-            {% if value %}
-            <div class="flex gap-2">
-              <span class="text-subdued">{{ key }}:</span>
-              <span>{{ value }}</span>
-            </div>
-            {% endif %}
+        <div class="text-small step-params">
+          {% for key, param in step.params.items() %}
+          <div class="step-param">
+            <span class="step-param-key">{{ key }}:</span>
+            <span class="step-param-value">
+              {{ param.value }}
+              {% if param.original %}
+              <span class="step-param-note" title="Original: {{ param.original }}">
+                (resolved)
+              </span>
+              {% elif param.explanation %}
+              <span class="step-param-note step-param-unresolved" title="{{ param.explanation }}">
+                ({{ param.explanation }})
+              </span>
+              {% endif %}
+            </span>
+          </div>
           {% endfor %}
         </div>
         {% else %}

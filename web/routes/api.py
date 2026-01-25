@@ -57,7 +57,58 @@ def add_workflow_step():
     steps.append(step)
     session['workflow_steps'] = steps
     
-    return render_template('workflow/partials/steps.html', steps=steps)
+    # Resolve values for display
+    resolved_steps = _resolve_step_values(steps)
+    
+    return render_template('workflow/partials/steps.html', steps=resolved_steps)
+
+
+def _resolve_step_values(steps: list) -> list:
+    """Resolve template variables in step parameters for display."""
+    import os
+    
+    resolved = []
+    config_values = {
+        'PHOTO_LIBRARY': current_app.config.get('PHOTO_LIBRARY', '~/Pictures/PhotoLibrary'),
+        'ALBUM_DIR': current_app.config.get('ALBUM_DIR', '~/Pictures/Albums'),
+        'DEFAULT_AUTHOR': os.environ.get('DEFAULT_AUTHOR', ''),
+    }
+    
+    for step in steps:
+        resolved_step = {
+            'id': step['id'],
+            'module_id': step['module_id'],
+            'module_name': step['module_name'],
+            'params': {},
+        }
+        
+        for key, value in step.get('params', {}).items():
+            if not value:
+                continue
+            
+            str_value = str(value)
+            resolved_value = str_value
+            explanation = None
+            
+            # Check for template variables
+            if '{{' in str_value and '}}' in str_value:
+                for var_name, var_value in config_values.items():
+                    placeholder = '{{' + var_name + '}}'
+                    if placeholder in str_value:
+                        if var_value:
+                            resolved_value = str_value.replace(placeholder, var_value)
+                        else:
+                            explanation = f"from config: {var_name}"
+            
+            resolved_step['params'][key] = {
+                'value': resolved_value,
+                'original': str_value if resolved_value != str_value else None,
+                'explanation': explanation,
+            }
+        
+        resolved.append(resolved_step)
+    
+    return resolved
 
 
 @api_bp.route('/workflow/steps/<int:step_id>', methods=['DELETE'])
@@ -71,7 +122,8 @@ def remove_workflow_step(step_id: int):
         step['id'] = i + 1
     
     session['workflow_steps'] = steps
-    return render_template('workflow/partials/steps.html', steps=steps)
+    resolved_steps = _resolve_step_values(steps)
+    return render_template('workflow/partials/steps.html', steps=resolved_steps)
 
 
 @api_bp.route('/workflow/steps/<int:step_id>/params', methods=['POST'])
