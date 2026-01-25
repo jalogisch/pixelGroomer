@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="doc/images/logo.png" alt="PixelGroomer" width="400">
+</p>
+
 # PixelGroomer
 
 *[Deutsche Version](README.de.md)*

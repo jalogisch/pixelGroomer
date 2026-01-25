@@ -5,6 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}PixelGroomer Web{% endblock %}</title>
   
+  <!-- Favicon -->
+  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='img/favicon.ico') }}">
+  <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='img/favicon-32.png') }}">
+  <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='img/favicon-16.png') }}">
+  <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='img/apple-touch-icon.png') }}">
+  
   <!-- Theme CSS -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/themes/' + current_theme + '.css') }}" id="theme-css">
   
@@ -18,10 +24,7 @@
     <!-- Header -->
     <header class="app-header">
       <div class="app-logo">
-        <svg viewBox="0 0 24 24" fill="currentColor">
-          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-        </svg>
-        <span>PixelGroomer</span>
+        <img src="{{ url_for('static', filename='img/logo-header.png') }}" alt="PixelGroomer" height="32">
       </div>
       
       <nav class="app-nav">
