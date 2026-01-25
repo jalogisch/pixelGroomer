@@ -62,7 +62,7 @@
            {% if param.max is defined %}max="{{ param.max }}"{% endif %}
            {% if param.required %}required{% endif %}>
     
-    {% elif param.type == 'path' %}
+    {% elif param.type == 'path' or param.type == 'positional' %}
     {# Path input with browser button - may be locked from import step #}
     {% if param.id in locked_params %}
     {# Locked field - read-only with explanation #}
@@ -98,6 +98,20 @@
     <p class="text-subdued text-small mt-1">{{ param.help }}</p>
     {% endif %}
     {% endif %}
+    
+    {% elif param.type == 'flag' %}
+    {# Flag type - value itself is the flag #}
+    <select class="form-select" 
+            id="param-{{ param.id }}" 
+            name="{{ param.id }}"
+            {% if param.required %}required{% endif %}>
+      {% for option in param.options %}
+      <option value="{{ option.value }}" 
+              {% if params.get(param.id, param.default) == option.value %}selected{% endif %}>
+        {{ option.label }}
+      </option>
+      {% endfor %}
+    </select>
     
     {% else %}
     {# Default: text input #}

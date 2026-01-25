@@ -6,11 +6,10 @@ order: 2
 
 parameters:
   - id: directory
-    type: path
+    type: positional
     label: Directory
     placeholder: ~/Pictures/PhotoLibrary/2026-01-24
     required: true
-    cli_flag: ""
     inherit_from: target_directory
     help: "Auto-filled from previous import step if available."
     
@@ -41,12 +40,6 @@ parameters:
     label: Only set GPS if missing
     default: true
     cli_flag: --if-missing
-    
-  - id: recursive
-    type: boolean
-    label: Process subdirectories
-    default: true
-    cli_flag: --recursive
 
 outputs:
   - id: processed_count

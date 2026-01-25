@@ -17,8 +17,8 @@ class VerifyModule:
             if not dir_path.exists():
                 errors.append(f"Directory does not exist: {directory}")
         
-        action = params.get('action', 'generate')
-        if action not in ('generate', 'verify', 'update'):
+        action = params.get('action', '-g')
+        if action not in ('-g', '-c', '-u', '--generate', '--check', '--update'):
             errors.append("Invalid action")
         
         return errors

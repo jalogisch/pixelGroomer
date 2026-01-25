@@ -5,33 +5,31 @@ icon: check-circle
 order: 5
 
 parameters:
-  - id: action
-    type: select
-    label: Action
-    options:
-      - value: generate
-        label: Generate checksums
-      - value: verify
-        label: Verify existing checksums
-      - value: update
-        label: Update checksums (add new files)
-    default: generate
-    cli_flag: ""
-    
   - id: directory
-    type: path
+    type: positional
     label: Directory
     placeholder: ~/Pictures/PhotoLibrary/2026-01-24
     required: true
-    cli_flag: ""
     inherit_from: target_directory
     help: "Auto-filled from previous step if available."
     
-  - id: recursive
+  - id: action
+    type: flag
+    label: Action
+    options:
+      - value: -g
+        label: Generate checksums
+      - value: -c
+        label: Verify existing checksums
+      - value: -u
+        label: Update checksums (add new files)
+    default: -g
+    
+  - id: no_recursive
     type: boolean
-    label: Process subdirectories
-    default: true
-    cli_flag: --recursive
+    label: Only this directory (no subdirs)
+    default: false
+    cli_flag: --no-recursive
 
 outputs:
   - id: verified_count

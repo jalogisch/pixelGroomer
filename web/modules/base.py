@@ -132,6 +132,7 @@ class WorkflowModule:
     def _build_args(self, params: dict) -> list[str]:
         """Build command line arguments from parameters."""
         args = []
+        positional_args = []
         
         for param in self.parameters:
             param_id = param['id']
@@ -146,13 +147,25 @@ class WorkflowModule:
             
             if param_type == 'boolean':
                 if value in (True, 'true', '1', 'yes'):
-                    args.append(cli_flag)
+                    if cli_flag:  # Only add if cli_flag is not empty
+                        args.append(cli_flag)
             elif param_type == 'positional':
-                args.insert(0, str(value))
-            else:
-                args.extend([cli_flag, str(value)])
+                positional_args.append(self._quote_arg(str(value)))
+            elif param_type == 'flag':
+                # The value itself is the flag (e.g., -g, --generate)
+                args.append(str(value))
+            elif cli_flag:  # Only add if cli_flag is not empty
+                args.extend([cli_flag, self._quote_arg(str(value))])
         
-        return args
+        # Positional args go at the end (or beginning depending on script)
+        return positional_args + args
+    
+    def _quote_arg(self, arg: str) -> str:
+        """Quote argument if it contains spaces or special characters."""
+        if ' ' in arg or '"' in arg or "'" in arg:
+            # Escape any existing double quotes and wrap in double quotes
+            return '"' + arg.replace('"', '\\"') + '"'
+        return arg
     
     def execute(self, params: dict, context: dict) -> dict:
         """Execute the module with the given parameters."""
