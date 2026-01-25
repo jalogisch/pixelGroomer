@@ -1,0 +1,67 @@
+{
+  "id": "example-enduro-workflow",
+  "name": "Enduro Event Workflow",
+  "description": "Complete workflow for motorcycle events: Import from SD card, set metadata, develop RAW files, and export for web sharing.",
+  "category": "complete",
+  "steps": [
+    {
+      "id": 1,
+      "module_id": "import",
+      "module_name": "Import Photos",
+      "params": {
+        "source": "/Volumes/EOS_DIGITAL",
+        "destination": "{{PHOTO_LIBRARY}}",
+        "event": "Endurotraining",
+        "location": "Stadtoldendorf",
+        "author": "{{DEFAULT_AUTHOR}}",
+        "copyright": "Unlicense - Public Domain"
+      }
+    },
+    {
+      "id": 2,
+      "module_id": "exif",
+      "module_name": "Set EXIF Metadata",
+      "params": {
+        "directory": "{{PHOTO_LIBRARY}}",
+        "author": "{{DEFAULT_AUTHOR}}",
+        "artist": "pixelpiste",
+        "gps": "51.875222,9.648111",
+        "copyright": "Unlicense - Public Domain"
+      }
+    },
+    {
+      "id": 3,
+      "module_id": "develop",
+      "module_name": "Develop RAW",
+      "params": {
+        "source": "{{PHOTO_LIBRARY}}",
+        "output": "{SOURCE}/developed",
+        "processor": "darktable",
+        "preset": "Enduro Action",
+        "quality": "95"
+      }
+    },
+    {
+      "id": 4,
+      "module_id": "export",
+      "module_name": "Web Export",
+      "params": {
+        "source": "{SOURCE}/developed",
+        "output": "~/Desktop/EnduroExport",
+        "watermark": "Jan Doberstein - enduroXperience",
+        "quality": "85",
+        "resize": "2048",
+        "max_size": "2048"
+      }
+    },
+    {
+      "id": 5,
+      "module_id": "verify",
+      "module_name": "Verify Checksums",
+      "params": {
+        "directory": "{{PHOTO_LIBRARY}}",
+        "action": "-g"
+      }
+    }
+  ]
+}

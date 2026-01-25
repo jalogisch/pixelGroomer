@@ -1,0 +1,41 @@
+{
+  "id": "example-daily-offload",
+  "name": "Daily Offload",
+  "description": "Simple daily SD card import for multi-day events. Perfect for offloading SD cards daily with consistent metadata.",
+  "category": "import",
+  "steps": [
+    {
+      "id": 1,
+      "module_id": "import",
+      "module_name": "Import Photos",
+      "params": {
+        "source": "/Volumes/EOS_DIGITAL",
+        "destination": "{{PHOTO_LIBRARY}}",
+        "event": "Event Name 2026",
+        "location": "Location",
+        "author": "{{DEFAULT_AUTHOR}}",
+        "copyright": "Unlicense - Public Domain"
+      }
+    },
+    {
+      "id": 2,
+      "module_id": "exif",
+      "module_name": "Set EXIF Metadata",
+      "params": {
+        "directory": "{{PHOTO_LIBRARY}}",
+        "author": "{{DEFAULT_AUTHOR}}",
+        "artist": "pixelpiste",
+        "gps": "51.875222,9.648111"
+      }
+    },
+    {
+      "id": 3,
+      "module_id": "verify",
+      "module_name": "Verify Checksums",
+      "params": {
+        "directory": "{{PHOTO_LIBRARY}}",
+        "action": "-g"
+      }
+    }
+  ]
+}

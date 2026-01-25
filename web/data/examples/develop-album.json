@@ -1,0 +1,29 @@
+{
+  "id": "example-develop-album",
+  "name": "Develop Album",
+  "description": "Develop RAW files with unified darktable preset. Ensures all photos from an event have the same look and feel.",
+  "category": "develop",
+  "steps": [
+    {
+      "id": 1,
+      "module_id": "develop",
+      "module_name": "Develop RAW",
+      "params": {
+        "source": "{{PHOTO_LIBRARY}}/2026-01-25",
+        "output": "{SOURCE}/developed",
+        "processor": "darktable",
+        "preset": "Adventure",
+        "quality": "92"
+      }
+    },
+    {
+      "id": 2,
+      "module_id": "verify",
+      "module_name": "Verify Checksums",
+      "params": {
+        "directory": "{{PHOTO_LIBRARY}}/2026-01-25/developed",
+        "action": "-g"
+      }
+    }
+  ]
+}

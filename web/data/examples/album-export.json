@@ -1,0 +1,31 @@
+{
+  "id": "example-album-export",
+  "name": "Album Export",
+  "description": "Export album with licensing metadata and watermark. Perfect for sharing photos with clear usage rights.",
+  "category": "export",
+  "steps": [
+    {
+      "id": 1,
+      "module_id": "exif",
+      "module_name": "Set EXIF Metadata",
+      "params": {
+        "directory": "{{PHOTO_LIBRARY}}/2026-01-25/developed",
+        "author": "{{DEFAULT_AUTHOR}}",
+        "copyright": "CC BY-NC-SA 4.0"
+      }
+    },
+    {
+      "id": 2,
+      "module_id": "export",
+      "module_name": "Web Export",
+      "params": {
+        "source": "{{PHOTO_LIBRARY}}/2026-01-25/developed",
+        "output": "~/Desktop/Export",
+        "watermark": "pixelPiste",
+        "quality": "85",
+        "resize": "2048",
+        "max_size": "2048"
+      }
+    }
+  ]
+}

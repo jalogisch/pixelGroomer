@@ -44,5 +44,7 @@ __pycache__/
 /Albums/
 /Export/
 
-# Web app runtime data
-web/data/
+# Web app runtime data (user-generated)
+web/data/workflows/
+web/data/thumbnails/
+web/data/albums/
