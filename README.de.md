@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="doc/images/logo.png" alt="PixelGroomer" width="400">
+  <img src="doc/images/logo.png" alt="PixelGroomer" width="200">
 </p>
 
 # PixelGroomer
