@@ -386,6 +386,9 @@ def browse_directory():
     if not path:
         path = str(Path.home())
     
+    # Expand ~ in path
+    path = str(Path(path).expanduser())
+    
     contents = service.list_directory(path)
     drives = service.get_drives()
     quick_paths = service.get_quick_paths()
@@ -402,6 +405,31 @@ def browse_directory():
         target_input=target_input,
         mode=mode,
     )
+
+
+@api_bp.route('/filesystem/mkdir', methods=['POST'])
+def create_directory():
+    """Create a new directory."""
+    base_path = request.form.get('path', '')
+    folder_name = request.form.get('name', '').strip()
+    
+    if not base_path or not folder_name:
+        return jsonify({'success': False, 'error': 'Path and name required'})
+    
+    # Validate folder name (no path separators, no dots at start)
+    if '/' in folder_name or '\\' in folder_name or folder_name.startswith('.'):
+        return jsonify({'success': False, 'error': 'Invalid folder name'})
+    
+    try:
+        new_path = Path(base_path).expanduser() / folder_name
+        new_path.mkdir(parents=False, exist_ok=False)
+        return jsonify({'success': True, 'path': str(new_path)})
+    except FileExistsError:
+        return jsonify({'success': False, 'error': 'Folder already exists'})
+    except PermissionError:
+        return jsonify({'success': False, 'error': 'Permission denied'})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
 
 
 from pathlib import Path

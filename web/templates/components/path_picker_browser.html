@@ -5,6 +5,20 @@
 {% set target_input = target_input if target_input is defined else '' %}
 {% set mode = mode if mode is defined else 'directory' %}
 
+<!-- Actions - always visible at top -->
+<div class="path-browser-actions-top">
+  <button type="button" 
+          class="btn btn-primary"
+          onclick="selectPath('{{ target_input }}', document.getElementById('path-browser-current-path').value)">
+    Select This Folder
+  </button>
+  <button type="button" 
+          class="btn btn-secondary"
+          onclick="document.getElementById('path-picker-modal').close()">
+    Cancel
+  </button>
+</div>
+
 <div class="path-browser">
   <!-- Sidebar: Drives & Quick Access -->
   <div class="path-browser-sidebar">
@@ -64,7 +78,13 @@
              class="form-input path-browser-path-input"
              id="path-browser-current-path"
              value="{{ contents.path }}"
-             readonly>
+             onkeydown="if(event.key==='Enter'){browsePath('{{ target_input }}', '{{ mode }}')}"
+             placeholder="Enter path or browse below">
+      <button type="button"
+              class="btn btn-small"
+              onclick="browsePath('{{ target_input }}', '{{ mode }}')">
+        Go
+      </button>
     </div>
     
     <!-- Navigation -->
@@ -79,6 +99,30 @@
         &uarr; Up
       </button>
       {% endif %}
+      <button type="button"
+              class="btn btn-small btn-secondary"
+              onclick="showNewFolderInput('{{ contents.path }}', '{{ target_input }}', '{{ mode }}')">
+        + New Folder
+      </button>
+    </div>
+    
+    <!-- New Folder Input (hidden by default) -->
+    <div id="new-folder-input" class="path-browser-new-folder hidden">
+      <input type="text" 
+             class="form-input"
+             id="new-folder-name"
+             placeholder="Folder name"
+             onkeydown="if(event.key==='Enter'){createNewFolder('{{ contents.path }}', '{{ target_input }}', '{{ mode }}')}">
+      <button type="button"
+              class="btn btn-small btn-primary"
+              onclick="createNewFolder('{{ contents.path }}', '{{ target_input }}', '{{ mode }}')">
+        Create
+      </button>
+      <button type="button"
+              class="btn btn-small btn-secondary"
+              onclick="hideNewFolderInput()">
+        Cancel
+      </button>
     </div>
     
     <!-- Directory List -->
@@ -105,18 +149,4 @@
       {% endif %}
     </div>
   </div>
-</div>
-
-<!-- Actions -->
-<div class="path-browser-actions">
-  <button type="button" 
-          class="btn btn-secondary"
-          onclick="document.getElementById('path-picker-modal').close()">
-    Cancel
-  </button>
-  <button type="button" 
-          class="btn btn-primary"
-          onclick="selectPath('{{ target_input }}', '{{ contents.path }}')">
-    Select This Folder
-  </button>
 </div>

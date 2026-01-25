@@ -316,3 +316,91 @@ function openPathPicker(targetInputId, mode) {
   
   modal.showModal();
 }
+
+/**
+ * Browse to a path entered in the path input
+ */
+function browsePath(targetInputId, mode) {
+  const pathInput = document.getElementById('path-browser-current-path');
+  const content = document.getElementById('path-picker-modal-content');
+  
+  if (!pathInput || !content) return;
+  
+  htmx.ajax('GET', '/api/filesystem/browse', {
+    target: content,
+    swap: 'innerHTML',
+    values: {
+      path: pathInput.value,
+      target: targetInputId,
+      mode: mode
+    }
+  });
+}
+
+/**
+ * Show new folder input
+ */
+function showNewFolderInput(basePath, targetInputId, mode) {
+  const container = document.getElementById('new-folder-input');
+  const input = document.getElementById('new-folder-name');
+  
+  if (container) {
+    container.classList.remove('hidden');
+    if (input) {
+      input.value = '';
+      input.focus();
+    }
+  }
+}
+
+/**
+ * Hide new folder input
+ */
+function hideNewFolderInput() {
+  const container = document.getElementById('new-folder-input');
+  if (container) {
+    container.classList.add('hidden');
+  }
+}
+
+/**
+ * Create a new folder
+ */
+function createNewFolder(basePath, targetInputId, mode) {
+  const nameInput = document.getElementById('new-folder-name');
+  const content = document.getElementById('path-picker-modal-content');
+  
+  if (!nameInput || !nameInput.value.trim()) {
+    alert('Please enter a folder name');
+    return;
+  }
+  
+  const folderName = nameInput.value.trim();
+  
+  // Create folder via API
+  fetch('/api/filesystem/mkdir', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: `path=${encodeURIComponent(basePath)}&name=${encodeURIComponent(folderName)}`
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      // Browse to the new folder
+      htmx.ajax('GET', '/api/filesystem/browse', {
+        target: content,
+        swap: 'innerHTML',
+        values: {
+          path: data.path,
+          target: targetInputId,
+          mode: mode
+        }
+      });
+    } else {
+      alert('Error: ' + (data.error || 'Could not create folder'));
+    }
+  })
+  .catch(err => {
+    alert('Error creating folder: ' + err);
+  });
+}

@@ -736,20 +736,10 @@ h4 { font-size: 1.125rem; }
   white-space: nowrap;
 }
 
-/* Browser path bar */
-.path-browser-path {
-  padding: 0.5rem;
-  border-bottom: 1px solid var(--color-border);
-}
-
-.path-browser-path-input {
-  font-family: monospace;
-  font-size: 0.8125rem;
-  background-color: var(--color-background-light);
-}
-
 /* Browser navigation */
 .path-browser-nav {
+  display: flex;
+  gap: 0.5rem;
   padding: 0.5rem;
   border-bottom: 1px solid var(--color-border);
   background-color: var(--color-background-light);
@@ -776,7 +766,44 @@ h4 { font-size: 1.125rem; }
   background-color: var(--color-background-light);
 }
 
-/* Browser actions */
+/* Browser actions - top bar */
+.path-browser-actions-top {
+  display: flex;
+  justify-content: flex-start;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--color-border);
+  background-color: var(--color-background-light);
+}
+
+/* Browser path bar with Go button */
+.path-browser-path {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.path-browser-path-input {
+  flex: 1;
+  font-family: monospace;
+  font-size: 0.8125rem;
+}
+
+/* New folder input */
+.path-browser-new-folder {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  background-color: var(--color-background-light);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.path-browser-new-folder input {
+  flex: 1;
+}
+
+/* Browser actions - bottom bar (legacy, keep for compatibility) */
 .path-browser-actions {
   display: flex;
   justify-content: flex-end;
