@@ -269,6 +269,43 @@ document.body.addEventListener('htmx:afterRequest', function(e) {
 });
 
 /**
+ * Album popup functions
+ */
+
+function toggleAlbumPopup(button) {
+  const container = button.closest('.album-multi-select');
+  const popup = container.querySelector('.album-popup');
+  
+  if (popup.classList.contains('hidden')) {
+    // Close any other open popups
+    document.querySelectorAll('.album-popup').forEach(p => p.classList.add('hidden'));
+    popup.classList.remove('hidden');
+    
+    // Close on click outside
+    setTimeout(() => {
+      document.addEventListener('click', closeAlbumPopupOnClickOutside);
+    }, 0);
+  } else {
+    popup.classList.add('hidden');
+  }
+}
+
+function closeAlbumPopupOnClickOutside(e) {
+  const popup = document.querySelector('.album-popup:not(.hidden)');
+  if (popup && !popup.contains(e.target) && !e.target.closest('.album-multi-select')) {
+    popup.classList.add('hidden');
+    document.removeEventListener('click', closeAlbumPopupOnClickOutside);
+  }
+}
+
+// Close popup after HTMX swap
+document.body.addEventListener('htmx:afterSwap', function(e) {
+  if (e.detail.target && e.detail.target.id === 'album-checkboxes') {
+    document.querySelectorAll('.album-popup').forEach(p => p.classList.add('hidden'));
+  }
+});
+
+/**
  * Path picker functions
  */
 
