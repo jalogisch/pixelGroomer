@@ -1,8 +1,16 @@
 """Album manager routes."""
-from flask import Blueprint, render_template, request, current_app
+from flask import Blueprint, render_template, request, current_app, session
 from pathlib import Path
 
 album_bp = Blueprint('album', __name__, url_prefix='/album')
+
+
+def get_library_path():
+    """Get the current library path from session or config."""
+    custom_path = session.get('album_library_path')
+    if custom_path and Path(custom_path).exists():
+        return custom_path
+    return current_app.config.get('PHOTO_LIBRARY', str(Path.home() / 'Pictures'))
 
 
 @album_bp.route('/')
@@ -11,7 +19,14 @@ def index():
     from services.library import LibraryService
     from services.album import AlbumService
     
-    library = LibraryService(current_app.config)
+    # Get library path (custom or from config)
+    library_path = get_library_path()
+    
+    # Create config with custom library path
+    config = dict(current_app.config)
+    config['PHOTO_LIBRARY'] = library_path
+    
+    library = LibraryService(config)
     album_service = AlbumService(current_app.config)
     
     # Get folder list
@@ -40,7 +55,25 @@ def index():
         photos=photos,
         current_index=current_index,
         albums=albums,
+        library_path=library_path,
+        default_library_path=current_app.config.get('PHOTO_LIBRARY', ''),
     )
+
+
+@album_bp.route('/set-library', methods=['POST'])
+def set_library():
+    """Set the library path."""
+    library_path = request.form.get('library_path', '').strip()
+    
+    if library_path:
+        # Expand ~ and validate
+        expanded = str(Path(library_path).expanduser())
+        if Path(expanded).exists() and Path(expanded).is_dir():
+            session['album_library_path'] = expanded
+    
+    # Redirect back to album page
+    from flask import redirect, url_for
+    return redirect(url_for('album.index'))
 
 
 @album_bp.route('/browser')
@@ -49,7 +82,14 @@ def browser():
     from services.library import LibraryService
     from services.album import AlbumService
     
-    library = LibraryService(current_app.config)
+    # Get library path (custom or from config)
+    library_path = get_library_path()
+    
+    # Create config with custom library path
+    config = dict(current_app.config)
+    config['PHOTO_LIBRARY'] = library_path
+    
+    library = LibraryService(config)
     album_service = AlbumService(current_app.config)
     
     folder = request.args.get('folder', '')

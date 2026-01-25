@@ -8,6 +8,41 @@
     <h1>Album Manager</h1>
   </div>
   
+  <!-- Library Path Selection -->
+  <div class="card mb-4">
+    <div class="card-body">
+      <form action="{{ url_for('album.set_library') }}" method="post" class="flex gap-2 items-end">
+        <div class="form-group" style="margin-bottom: 0; flex: 1;">
+          <label class="form-label" for="library-path">
+            Photo Library
+            {% if library_path != default_library_path %}
+            <span class="text-subdued text-small">(custom)</span>
+            {% endif %}
+          </label>
+          <div class="path-picker">
+            <input type="text" 
+                   class="form-input path-picker-input"
+                   id="library-path"
+                   name="library_path"
+                   value="{{ library_path }}"
+                   placeholder="{{ default_library_path }}">
+            <button type="button" 
+                    class="btn btn-secondary path-picker-btn"
+                    onclick="openPathPicker('library-path', 'directory')">
+              Browse
+            </button>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary">Load</button>
+        {% if library_path != default_library_path %}
+        <a href="{{ url_for('album.set_library') }}" 
+           onclick="document.getElementById('library-path').value='{{ default_library_path }}'; this.closest('form').submit(); return false;"
+           class="btn btn-secondary">Reset</a>
+        {% endif %}
+      </form>
+    </div>
+  </div>
+  
   <!-- Folder Selection -->
   <div class="card mb-4">
     <div class="card-body">
