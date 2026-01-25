@@ -16,6 +16,7 @@
     <label class="form-label" for="param-{{ param.id }}">
       {{ param.label }}
       {% if param.required %}<span class="text-danger">*</span>{% endif %}
+      {% if param.inherit_from %}<span class="text-subdued text-small">(auto)</span>{% endif %}
     </label>
     
     {% if param.type == 'select' %}
@@ -69,13 +70,17 @@
              name="{{ param.id }}"
              value="{{ params.get(param.id, param.default or '') }}"
              placeholder="{{ param.placeholder or '' }}"
-             {% if param.required %}required{% endif %}>
+             {% if param.required %}required{% endif %}
+             {% if param.inherit_from %}data-inherit-from="{{ param.inherit_from }}"{% endif %}>
       <button type="button" 
               class="btn btn-secondary path-picker-btn"
               onclick="openPathPicker('param-{{ param.id }}', 'directory')">
         Browse
       </button>
     </div>
+    {% if param.help %}
+    <p class="text-subdued text-small mt-1">{{ param.help }}</p>
+    {% endif %}
     
     {% else %}
     {# Default: text input #}

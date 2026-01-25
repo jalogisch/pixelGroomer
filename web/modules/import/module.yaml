@@ -13,6 +13,14 @@ parameters:
     must_exist: true
     cli_flag: ""
     
+  - id: destination
+    type: path
+    label: Destination (Photo Library)
+    placeholder: ~/Pictures/PhotoLibrary
+    default: "{{PHOTO_LIBRARY}}"
+    cli_flag: --output
+    help: "Where to store imported photos. Defaults to PHOTO_LIBRARY from config."
+    
   - id: event
     type: text
     label: Event Name

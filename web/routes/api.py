@@ -95,12 +95,80 @@ def get_module_form(module_id: str):
         return 'Module not found', 404
     
     step_id = request.args.get('step_id', 0)
+    
+    # Get inherited values from previous workflow steps
+    inherited_params = _get_inherited_params(module)
+    
+    # Resolve template variables in defaults (e.g. {{PHOTO_LIBRARY}})
+    params = _resolve_defaults(module, inherited_params)
+    
     return render_template(
         'components/module_form.html',
         module=module,
         step_id=step_id,
-        params={},
+        params=params,
     )
+
+
+def _get_inherited_params(module) -> dict:
+    """Get parameter values inherited from previous workflow steps."""
+    steps = session.get('workflow_steps', [])
+    inherited = {}
+    
+    # Build a map of all outputs from previous steps
+    outputs = {}
+    for step in steps:
+        params = step.get('params', {})
+        # Map common output patterns
+        if 'destination' in params:
+            outputs['target_directory'] = params['destination']
+        if 'output' in params:
+            outputs['output_directory'] = params['output']
+        if 'directory' in params:
+            outputs['target_directory'] = params['directory']
+        if 'source' in params and 'target_directory' not in outputs:
+            outputs['target_directory'] = params['source']
+    
+    # Check which module parameters can inherit values
+    for param in module.parameters:
+        inherit_from = param.get('inherit_from')
+        if inherit_from and inherit_from in outputs:
+            inherited[param['id']] = outputs[inherit_from]
+    
+    return inherited
+
+
+def _resolve_defaults(module, inherited_params: dict) -> dict:
+    """Resolve template variables in parameter defaults."""
+    params = dict(inherited_params)
+    
+    for param in module.parameters:
+        param_id = param['id']
+        
+        # Skip if already inherited
+        if param_id in params:
+            continue
+        
+        default = param.get('default', '')
+        if not default:
+            continue
+        
+        # Resolve {{VARIABLE}} placeholders
+        if '{{' in str(default):
+            if '{{PHOTO_LIBRARY}}' in default:
+                params[param_id] = default.replace(
+                    '{{PHOTO_LIBRARY}}', 
+                    current_app.config.get('PHOTO_LIBRARY', '')
+                )
+            elif '{{DEFAULT_AUTHOR}}' in default:
+                # Read from .env or use empty
+                import os
+                params[param_id] = default.replace(
+                    '{{DEFAULT_AUTHOR}}',
+                    os.environ.get('DEFAULT_AUTHOR', '')
+                )
+    
+    return params
 
 
 @api_bp.route('/workflow/save', methods=['POST'])

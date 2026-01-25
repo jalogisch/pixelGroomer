@@ -11,6 +11,8 @@ parameters:
     placeholder: ~/Pictures/PhotoLibrary/2026-01-24
     required: true
     cli_flag: ""
+    inherit_from: target_directory
+    help: "Auto-filled from previous import step if available."
     
   - id: author
     type: text
