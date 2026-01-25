@@ -40,9 +40,9 @@ __pycache__/
 .checksums
 
 # Photo library (if accidentally placed in repo)
-PhotoLibrary/
-Albums/
-Export/
+/PhotoLibrary/
+/Albums/
+/Export/
 
 # Web app runtime data
 web/data/

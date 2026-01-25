@@ -1,0 +1,55 @@
+id: export
+name: Web Export
+description: Export photos with watermark and compression for web sharing
+icon: share
+order: 4
+
+parameters:
+  - id: source
+    type: path
+    label: Source Directory
+    placeholder: "{SOURCE}/developed"
+    required: true
+    cli_flag: ""
+    inherit_from: output_directory
+    help: "Auto-filled from previous develop step if available. Uses {SOURCE} placeholder when develop step exists."
+    
+  - id: output
+    type: path
+    label: Output Directory
+    placeholder: "{SOURCE}/export"
+    default: "{SOURCE}/export"
+    cli_flag: --output
+    help: "Use {SOURCE} to create export folder relative to source. Example: {SOURCE}/export or ~/Desktop/Export for fixed path."
+    
+  - id: watermark
+    type: text
+    label: Watermark Text
+    placeholder: "Jan Doberstein - enduroXperience"
+    cli_flag: --watermark
+    
+  - id: max_size
+    type: number
+    label: Max File Size (KB)
+    default: 2048
+    cli_flag: --max-size
+    
+  - id: resize
+    type: number
+    label: Resize to (px, longest edge)
+    default: 2048
+    cli_flag: --resize
+    
+  - id: quality
+    type: number
+    label: JPEG Quality (1-100)
+    default: 85
+    cli_flag: --quality
+
+outputs:
+  - id: exported_count
+    type: number
+    description: Number of files exported
+  - id: output_directory
+    type: path
+    description: Export output directory
