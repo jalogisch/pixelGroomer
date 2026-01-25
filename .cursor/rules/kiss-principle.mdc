@@ -1,0 +1,92 @@
+---
+description: KISS principle for technical decisions
+alwaysApply: true
+---
+
+# KISS Principle
+
+**Keep It Simple, Stupid** - When making technical decisions, always prefer the simpler solution.
+
+## When to Apply
+
+Apply the KISS principle when:
+
+- Choosing between technologies or frameworks
+- Designing architecture or system structure
+- Implementing features
+- Adding dependencies
+- Solving problems
+
+## Decision Guidelines
+
+### 1. Technology Selection
+
+Prefer technologies that:
+- Have fewer dependencies
+- Are well-established and maintained
+- Have clear documentation
+- Solve the problem without over-engineering
+
+**Example:** For this project, we chose Flask + Jinja2 + HTMX over a full SPA framework because:
+- Server-side rendering is simpler to debug
+- No build step required
+- Fewer moving parts
+- Easier to understand and maintain
+
+### 2. Architecture
+
+- Prefer flat structures over deep nesting
+- Avoid premature abstraction
+- Start with the simplest solution that works
+- Only add complexity when proven necessary
+
+### 3. Implementation
+
+```bash
+# ❌ Over-engineered
+function process_file() {
+    local file="$1"
+    local strategy="${2:-default}"
+    local validator="${3:-basic}"
+    local processor_factory
+    processor_factory=$(get_processor_factory "$strategy")
+    # ... 50 more lines
+}
+
+# ✅ Simple
+function process_file() {
+    local file="$1"
+    cp "$file" "$DEST_DIR/"
+}
+```
+
+### 4. Dependencies
+
+Before adding a dependency, ask:
+- Can this be done with existing tools?
+- Is the dependency well-maintained?
+- Does it add significant value over a simple implementation?
+
+## Trade-offs
+
+KISS does not mean:
+- ❌ Ignoring best practices
+- ❌ Skipping error handling
+- ❌ Writing unmaintainable code
+- ❌ Avoiding all abstraction
+
+KISS means:
+- ✅ Choosing the right level of complexity
+- ✅ Starting simple, adding complexity only when needed
+- ✅ Preferring readable over clever code
+- ✅ Solving the actual problem, not hypothetical ones
+
+## Project Examples
+
+| Decision | KISS Choice | Rejected Alternative |
+|----------|-------------|---------------------|
+| Web UI | Flask + HTMX | React/Vue SPA |
+| Config format | YAML + .env | Custom DSL |
+| Module system | YAML descriptor + Python | Plugin architecture |
+| Form persistence | sessionStorage | State management library |
+| Theme switching | CSS swap | Full page reload |

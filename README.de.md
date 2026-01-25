@@ -123,6 +123,7 @@ Dieses Projekt verwendet Cursor-Regeln (`.cursor/rules/*.mdc`) zur Steuerung von
 
 | Regel | Zweck |
 |-------|-------|
+| `kiss-principle.mdc` | KISS-Prinzip bei technischen Entscheidungen anwenden |
 | `languages.mdc` | Nur Bash und Python; Python muss im venv laufen |
 | `python-style.mdc` | Python Code-Stil für Web-Anwendung |
 | `bash-compatibility.mdc` | Bash 3.2 Kompatibilität erzwingen (macOS Standard) |

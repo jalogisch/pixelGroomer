@@ -123,6 +123,7 @@ This project uses Cursor rules (`.cursor/rules/*.mdc`) to guide AI assistants:
 
 | Rule | Purpose |
 |------|---------|
+| `kiss-principle.mdc` | Apply KISS principle for technical decisions |
 | `languages.mdc` | Only Bash and Python; Python must run in venv |
 | `python-style.mdc` | Python code style for web application |
 | `bash-compatibility.mdc` | Enforce Bash 3.2 compatibility (macOS default) |
