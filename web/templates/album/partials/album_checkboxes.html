@@ -1,25 +1,21 @@
-{# Album assignment checkboxes #}
+{# Album assignment checkboxes - inline tag style #}
 {% set photo_path = photo_path if photo_path is defined else current_photo %}
 {% set photo_albums = photo_albums if photo_albums is defined else [] %}
 
 {% if albums %}
-<div class="album-list">
-  {% for album in albums %}
-  <div class="form-checkbox mb-2">
-    <input type="checkbox"
-           id="album-{{ album.name | replace(' ', '-') }}"
-           {% if album.name in photo_albums %}checked{% endif %}
-           hx-post="{{ url_for('api.toggle_photo_album', photo_path=photo_path) }}"
-           hx-vals='{"album": "{{ album.name }}", "action": "toggle"}'
-           hx-target="#album-checkboxes"
-           hx-swap="innerHTML">
-    <label for="album-{{ album.name | replace(' ', '-') }}">
-      {{ album.name }}
-      <span class="text-subdued text-small">({{ album.photo_count }})</span>
-    </label>
-  </div>
-  {% endfor %}
-</div>
+{% for album in albums %}
+<label class="album-checkbox {% if album.name in photo_albums %}checked{% endif %}"
+       hx-post="{{ url_for('api.toggle_photo_album', photo_path=photo_path) }}"
+       hx-vals='{"album": "{{ album.name }}", "action": "toggle"}'
+       hx-target="#album-checkboxes"
+       hx-swap="innerHTML"
+       hx-trigger="click">
+  <input type="checkbox" 
+         {% if album.name in photo_albums %}checked{% endif %}
+         style="display: none;">
+  {{ album.name }}
+</label>
+{% endfor %}
 {% else %}
-<p class="text-subdued text-small">No albums yet. Create one below.</p>
+<span class="text-subdued text-small">No albums yet →</span>
 {% endif %}
