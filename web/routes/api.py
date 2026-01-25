@@ -41,12 +41,18 @@ def add_workflow_step():
     if not module:
         return 'Module not found', 404
     
+    # Capture all form parameters (except module_id)
+    params = {}
+    for key, value in request.form.items():
+        if key != 'module_id' and value:  # Skip empty values
+            params[key] = value
+    
     steps = session.get('workflow_steps', [])
     step = {
         'id': len(steps) + 1,
         'module_id': module_id,
         'module_name': module.name,
-        'params': {},
+        'params': params,
     }
     steps.append(step)
     session['workflow_steps'] = steps
