@@ -60,7 +60,7 @@ function initTheme() {
   const savedTheme = localStorage.getItem('pixelgroomer-theme');
   
   if (savedTheme) {
-    setTheme(savedTheme);
+    setTheme(savedTheme, false); // Don't save again, just apply
   }
   
   // Listen for theme changes
@@ -68,20 +68,51 @@ function initTheme() {
   if (themeSelect) {
     themeSelect.addEventListener('change', function() {
       const theme = this.value;
-      setTheme(theme);
-      localStorage.setItem('pixelgroomer-theme', theme);
+      setTheme(theme, true);
     });
   }
 }
 
 /**
  * Set the current theme
+ * Loads new CSS first, then removes old one to prevent flash of white
  */
-function setTheme(theme) {
-  const themeLink = document.getElementById('theme-css');
-  if (themeLink) {
-    themeLink.href = `/static/css/themes/${theme}.css`;
-  }
+function setTheme(theme, save) {
+  const oldLink = document.getElementById('theme-css');
+  if (!oldLink) return;
+  
+  const newHref = `/static/css/themes/${theme}.css`;
+  
+  // If same theme, do nothing
+  if (oldLink.href.endsWith(newHref)) return;
+  
+  // Create new link element
+  const newLink = document.createElement('link');
+  newLink.rel = 'stylesheet';
+  newLink.id = 'theme-css-new';
+  newLink.href = newHref;
+  
+  // Wait for new CSS to load before removing old one
+  newLink.onload = function() {
+    // Swap IDs
+    oldLink.remove();
+    newLink.id = 'theme-css';
+    
+    // Save to localStorage and server
+    if (save) {
+      localStorage.setItem('pixelgroomer-theme', theme);
+      
+      // Also save to server session
+      fetch('/api/theme', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'theme=' + encodeURIComponent(theme)
+      });
+    }
+  };
+  
+  // Insert new link after old one
+  oldLink.parentNode.insertBefore(newLink, oldLink.nextSibling);
   
   // Update the select if it exists
   const themeSelect = document.querySelector('#theme-select');

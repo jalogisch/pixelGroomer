@@ -37,11 +37,7 @@
       
       <div class="app-controls">
         <div class="theme-selector">
-          <select id="theme-select" 
-                  hx-post="{{ url_for('api.set_theme') }}"
-                  hx-target="#theme-css"
-                  hx-swap="outerHTML"
-                  name="theme">
+          <select id="theme-select" name="theme">
             {% for theme in themes %}
             <option value="{{ theme.id }}" {% if theme.id == current_theme %}selected{% endif %}>
               {{ theme.name }}
