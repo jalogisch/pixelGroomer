@@ -189,37 +189,61 @@ def _get_inherited_params(module) -> dict:
     steps = session.get('workflow_steps', [])
     inherited = {}
     
-    # Check if import step exists (provides dynamic directories based on photo dates)
+    # Check which steps exist (affects locking behavior)
     has_import_step = any(s.get('module_id') == 'import' for s in steps)
+    has_develop_step = any(s.get('module_id') == 'develop' for s in steps)
     
     # Build a map of all outputs from previous steps
     outputs = {}
+    output_sources = {}  # Track which step type provides each output
+    
     for step in steps:
         params = step.get('params', {})
+        module_id = step.get('module_id', '')
+        
         # Map common output patterns
         if 'destination' in params:
             outputs['target_directory'] = params['destination']
+            output_sources['target_directory'] = module_id
         if 'output' in params:
             outputs['output_directory'] = params['output']
+            output_sources['output_directory'] = module_id
         if 'directory' in params:
             outputs['target_directory'] = params['directory']
+            output_sources['target_directory'] = module_id
         if 'source' in params and 'target_directory' not in outputs:
             outputs['target_directory'] = params['source']
+            output_sources['target_directory'] = module_id
     
     # Check which module parameters can inherit values
     for param in module.parameters:
         inherit_from = param.get('inherit_from')
         if inherit_from and inherit_from in outputs:
-            # If import step exists and this inherits target_directory,
-            # lock it because import creates multiple date-based directories
+            value = outputs[inherit_from]
+            source_module = output_sources.get(inherit_from, '')
+            
+            # Determine if this should be locked
+            should_lock = False
+            lock_reason = ''
+            
+            # Lock if import step provides target_directory (creates date-based dirs)
             if has_import_step and inherit_from == 'target_directory':
+                should_lock = True
+                lock_reason = 'Automatically set from import step (may create multiple date-based directories)'
+            
+            # Lock if develop step provides output_directory (uses {SOURCE} pattern)
+            elif has_develop_step and inherit_from == 'output_directory' and '{SOURCE}' in str(value):
+                should_lock = True
+                lock_reason = 'Automatically set from develop step (follows {SOURCE} pattern for each source directory)'
+            
+            if should_lock:
                 inherited[param['id']] = {
-                    'value': outputs[inherit_from],
+                    'value': value,
                     'locked': True,
-                    'reason': 'Automatically set from import step (may create multiple date-based directories)'
+                    'reason': lock_reason
                 }
             else:
-                inherited[param['id']] = outputs[inherit_from]
+                inherited[param['id']] = value
     
     return inherited
 
