@@ -29,10 +29,14 @@ Please run the setup script first:
 ### Makefile-Befehle
 
 ```bash
-make setup      # Setup ausführen
-make check      # Abhängigkeiten prüfen
-make deps       # Externe Tools installieren (macOS)
-make clean      # venv entfernen
+make setup         # Setup ausführen
+make check         # Abhängigkeiten prüfen
+make deps          # Externe Tools installieren (macOS)
+make clean         # venv entfernen
+make test          # Alle Tests ausführen
+make test-fast     # Langsame Tests überspringen
+make test-coverage # Coverage-Report erstellen
+make lint          # ShellCheck auf allen Scripts ausführen
 ```
 
 ## Konfigurations-Priorität

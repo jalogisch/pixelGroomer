@@ -71,7 +71,7 @@ pg-import /Volumes/SD --dry-run --verbose
 ### Process
 
 1. Check venv (error if missing)
-2. Load configuration (SD card → .env → CLI)
+2. Load configuration (CLI → ENV → .env → .import.yaml)
 3. Scan files (RAW + JPG)
 4. Group by EXIF date
 5. Create target folders (default: `YYYY-MM-DD/`, configurable)
@@ -387,6 +387,47 @@ Sets up the development environment.
 - After cloning the repository
 - After changes to `requirements.txt`
 - When `.venv/` was deleted
+
+---
+
+## Running Tests
+
+The project includes a comprehensive test suite using pytest.
+
+### Syntax
+
+```bash
+make test              # Run all tests
+make test-fast         # Skip slow tests  
+make test-coverage     # Generate coverage report
+
+# Or directly with pytest
+source .venv/bin/activate
+pytest tests/ -v                           # All tests
+pytest tests/unit/ -v                      # Unit tests only
+pytest tests/integration/test_pg_import.py # Specific file
+```
+
+### Test Structure
+
+```
+tests/
+├── conftest.py          # Shared fixtures
+├── fixtures/            # Test helpers
+├── unit/                # Tests for lib/ modules
+├── integration/         # Tests for individual scripts
+├── e2e/                 # End-to-end workflow tests
+└── matrix/              # Combinatorial option tests
+```
+
+### Writing Tests
+
+New features require tests. See `tests/conftest.py` for available fixtures:
+
+- `test_env` - Isolated environment with temp directories
+- `run_script` - Execute `bin/pg-*` scripts
+- `sample_jpeg` - Create test images
+- `temp_sd_card` - Mock SD card structure
 
 ---
 

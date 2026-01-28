@@ -71,7 +71,7 @@ pg-import /Volumes/SD --dry-run --verbose
 ### Ablauf
 
 1. venv prüfen (Fehler wenn nicht vorhanden)
-2. Konfiguration laden (SD-Karte → .env → CLI)
+2. Konfiguration laden (CLI → ENV → .env → .import.yaml)
 3. Dateien scannen (RAW + JPG)
 4. Nach EXIF-Datum gruppieren
 5. Zielordner erstellen (Standard: `YYYY-MM-DD/`, konfigurierbar)
@@ -387,6 +387,47 @@ Richtet die Entwicklungsumgebung ein.
 - Nach dem Klonen des Repositories
 - Nach Änderungen an `requirements.txt`
 - Wenn `.venv/` gelöscht wurde
+
+---
+
+## Tests ausführen
+
+Das Projekt enthält eine umfassende Test-Suite mit pytest.
+
+### Syntax
+
+```bash
+make test              # Alle Tests ausführen
+make test-fast         # Langsame Tests überspringen
+make test-coverage     # Coverage-Report erstellen
+
+# Oder direkt mit pytest
+source .venv/bin/activate
+pytest tests/ -v                           # Alle Tests
+pytest tests/unit/ -v                      # Nur Unit-Tests
+pytest tests/integration/test_pg_import.py # Bestimmte Datei
+```
+
+### Test-Struktur
+
+```
+tests/
+├── conftest.py          # Gemeinsame Fixtures
+├── fixtures/            # Test-Helfer
+├── unit/                # Tests für lib/ Module
+├── integration/         # Tests für einzelne Scripts
+├── e2e/                 # End-to-End Workflow-Tests
+└── matrix/              # Kombinatorische Options-Tests
+```
+
+### Tests schreiben
+
+Neue Features benötigen Tests. Siehe `tests/conftest.py` für verfügbare Fixtures:
+
+- `test_env` - Isolierte Umgebung mit temp. Verzeichnissen
+- `run_script` - `bin/pg-*` Scripts ausführen
+- `sample_jpeg` - Test-Bilder erstellen
+- `temp_sd_card` - Mock SD-Karten-Struktur
 
 ---
 

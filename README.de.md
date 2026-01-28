@@ -91,7 +91,7 @@ event: "Hochzeit Meyer"
 location: "Berlin"
 ```
 
-**Priorität:** SD-Karte → .env → CLI-Argumente
+**Priorität:** CLI-Argumente → Umgebungsvariablen → .env → .import.yaml
 
 ## Dokumentation
 
@@ -106,6 +106,18 @@ Englische Dokumentation:
 - [Script Reference (EN)](doc/scripts.en.md)
 - [Examples (EN)](doc/examples.en.md)
 
+## Tests
+
+Führe die Tests vor dem Einreichen von Änderungen aus:
+
+```bash
+make test          # Alle Tests ausführen
+make test-fast     # Langsame Tests überspringen
+make test-coverage # Coverage-Report erstellen
+```
+
+Tests befinden sich in `tests/` und verwenden pytest. Alle neuen Features benötigen Tests.
+
 ## Beitragen mit KI
 
 Dieses Projekt verwendet Cursor-Regeln (`.cursor/rules/*.mdc`) zur Steuerung von KI-Assistenten:
@@ -116,6 +128,8 @@ Dieses Projekt verwendet Cursor-Regeln (`.cursor/rules/*.mdc`) zur Steuerung von
 | `bash-compatibility.mdc` | Bash 3.2 Kompatibilität erzwingen (macOS Standard) |
 | `bilingual-docs.mdc` | Dokumentation in Deutsch und Englisch pflegen |
 | `shellcheck.mdc` | ShellCheck-Validierung für alle Scripts verlangen |
+| `testing-requirements.mdc` | Alle Features benötigen Tests die bestehen |
+| `git-commits.mdc` | Kleine Commits mit Action-Prefix in der Nachricht |
 
 Bei Beiträgen mit einem KI-Assistenten sorgen diese Regeln für einheitlichen Code-Stil und Projektkonventionen.
 

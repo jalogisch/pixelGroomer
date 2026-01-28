@@ -91,7 +91,7 @@ event: "Wedding Meyer"
 location: "Berlin"
 ```
 
-**Priority:** SD card → .env → CLI arguments
+**Priority:** CLI arguments → environment variables → .env → .import.yaml
 
 ## Documentation
 
@@ -106,6 +106,18 @@ German documentation:
 - [Script-Referenz (DE)](doc/scripts.de.md)
 - [Beispiele (DE)](doc/examples.de.md)
 
+## Testing
+
+Run the test suite before submitting changes:
+
+```bash
+make test          # Run all tests
+make test-fast     # Skip slow tests
+make test-coverage # Generate coverage report
+```
+
+Tests are in `tests/` using pytest. All new features require tests.
+
 ## Contributing with AI
 
 This project uses Cursor rules (`.cursor/rules/*.mdc`) to guide AI assistants:
@@ -116,6 +128,8 @@ This project uses Cursor rules (`.cursor/rules/*.mdc`) to guide AI assistants:
 | `bash-compatibility.mdc` | Enforce Bash 3.2 compatibility (macOS default) |
 | `bilingual-docs.mdc` | Maintain documentation in German and English |
 | `shellcheck.mdc` | Require ShellCheck validation for all scripts |
+| `testing-requirements.mdc` | All features require tests that pass |
+| `git-commits.mdc` | Small commits with action-prefixed messages |
 
 When contributing with an AI assistant, these rules ensure consistent code style and project conventions.
 
