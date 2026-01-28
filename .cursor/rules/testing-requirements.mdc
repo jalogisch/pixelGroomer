@@ -1,0 +1,63 @@
+---
+description: Test requirements for all new features
+alwaysApply: true
+---
+
+# Testing Requirements
+
+All new features and bug fixes must include tests. Tests must pass before changes are considered complete.
+
+## Requirements
+
+1. **New features require tests** - Every new script, function, or feature must have corresponding tests
+2. **Bug fixes require regression tests** - Each bug fix must include a test that would have caught the bug
+3. **Tests must pass** - Run `make test` before considering work complete
+
+## Test Structure
+
+```
+tests/
+├── unit/           # Test individual functions in lib/
+├── integration/    # Test single pg-* scripts
+├── e2e/            # Test multi-script workflows
+└── matrix/         # Test option combinations
+```
+
+## Running Tests
+
+```bash
+# Run all tests
+make test
+
+# Run fast tests only (skip slow tests)
+make test-fast
+
+# Run specific test file
+source .venv/bin/activate && pytest tests/integration/test_pg_import.py -v
+```
+
+## Writing Tests
+
+- Use pytest fixtures from `tests/conftest.py`
+- Use `test_env` fixture to isolate from real user data
+- Use `run_script` fixture to execute `bin/pg-*` scripts
+- Check both `result.stdout` and `result.stderr` for output assertions
+- Mark slow tests with `@pytest.mark.slow`
+- Mark tests requiring optional tools with `@requires_darktable` or `@requires_imagemagick`
+
+## Example Test
+
+```python
+def test_new_feature(run_script, test_env, tmp_path):
+    """Describe what this test validates."""
+    # Setup
+    photo = create_jpeg(tmp_path / 'photo.jpg')
+    
+    # Execute
+    result = run_script('pg-example', str(photo))
+    
+    # Assert
+    assert result.returncode == 0
+    output = result.stdout + result.stderr
+    assert 'Expected output' in output
+```

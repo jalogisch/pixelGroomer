@@ -1,0 +1,122 @@
+---
+description: Git commit practices - small commits with action-prefixed messages
+alwaysApply: true
+---
+
+# Git Commit Practices
+
+## Commit Message Format
+
+```
+<action>: <short description>
+```
+
+### Actions
+
+| Action | When to Use |
+|--------|-------------|
+| `created` | New file, new feature from scratch |
+| `enhanced` | Improvements, new functionality to existing code |
+| `fixed` | Bug fixes, corrections |
+| `refactored` | Code restructuring without behavior change |
+| `updated` | Dependency updates, config changes |
+| `removed` | Deleting files or features |
+
+### Examples
+
+```bash
+# New feature
+git commit -m "created: add pg-stats script for archive statistics"
+
+# Enhancement
+git commit -m "enhanced: add --resize option to pg-develop"
+
+# Bug fix
+git commit -m "fixed: correct exit code in pg-album export"
+
+# Refactor
+git commit -m "refactored: extract EXIF functions to lib/exif_utils.py"
+
+# Update
+git commit -m "updated: bump PyYAML to 6.0.1"
+
+# Removal
+git commit -m "removed: drop legacy import script"
+```
+
+## Small, Frequent Commits
+
+**Commit early and often.** Each commit should be a single logical change that can be easily reverted.
+
+### Commit After Each Step
+
+```bash
+# ✅ CORRECT - Small, reversible commits
+git add bin/pg-stats
+git commit -m "created: add pg-stats script skeleton"
+
+git add lib/stats_utils.sh
+git commit -m "created: add statistics helper functions"
+
+git add tests/integration/test_pg_stats.py
+git commit -m "created: add tests for pg-stats"
+
+git add doc/scripts.en.md doc/scripts.de.md
+git commit -m "enhanced: document pg-stats in scripts docs"
+```
+
+```bash
+# ❌ WRONG - One big commit with everything
+git add .
+git commit -m "created: add pg-stats feature"
+# Hard to revert just the docs changes!
+```
+
+### When to Commit
+
+Commit after completing each of these:
+
+1. **Setup step** - README, config files, dependencies
+2. **New function** - Each new function or class
+3. **Feature complete** - When a feature works end-to-end
+4. **Bug fix** - Each individual fix
+5. **Refactor** - After each refactoring step
+6. **Before risky changes** - Checkpoint before experiments
+
+### Revert Strategy
+
+Small commits make it easy to undo changes:
+
+```bash
+# See recent commits
+git log --oneline -10
+
+# Undo last commit (keep changes staged)
+git reset --soft HEAD~1
+
+# Undo last commit (keep changes unstaged)
+git reset HEAD~1
+
+# Completely discard last commit
+git reset --hard HEAD~1
+
+# Revert a specific commit (creates new commit)
+git revert <commit-hash>
+```
+
+## Local Only (Don't Push)
+
+These commits are for **local development**. Do not push to remote unless:
+
+- Feature is complete and tested
+- Explicitly asked to push
+- Creating a PR for review
+
+## Component-Specific Changes
+
+For changes affecting specific components, you may optionally note the component:
+
+```bash
+git commit -m "fixed(pg-import): handle spaces in filenames"
+git commit -m "enhanced(lib): add Bash 3.2 compatible map functions"
+```
