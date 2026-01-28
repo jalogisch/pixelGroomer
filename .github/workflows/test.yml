@@ -52,12 +52,13 @@ jobs:
           source .venv/bin/activate
           pip install pytest pytest-timeout Pillow
 
-      - name: Run tests
+      - name: Run all tests (push to main)
+        if: github.event_name == 'push'
         run: |
           source .venv/bin/activate
-          pytest tests/ -v --timeout=60 -x
+          pytest tests/ -v --timeout=60
 
-      - name: Run tests (excluding slow)
+      - name: Run fast tests (pull request)
         if: github.event_name == 'pull_request'
         run: |
           source .venv/bin/activate
