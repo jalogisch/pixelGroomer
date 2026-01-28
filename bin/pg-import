@@ -201,6 +201,7 @@ load_import_config() {
     
     # Show final configuration sources
     [[ "$VERBOSE" == "true" ]] && log_debug "Config: event='$EVENT' location='$LOCATION' author='$AUTHOR' archive='$ARCHIVE_DIR'"
+    : # no-op for proper function termination
 }
 
 # =============================================================================
@@ -345,9 +346,9 @@ create_import_plan() {
         plan+=("$file|$target_path|$date")
     done
     
-    echo ""
+    echo "" >&2
     
-    # Output plan
+    # Output plan (stdout is used for the plan data)
     printf '%s\n' "${plan[@]}"
 }
 
@@ -470,10 +471,14 @@ generate_checksums() {
         local dir
         dir=$(dirname "$target")
         # shellcheck disable=SC2076  # We want literal string match, not regex
-        if [[ ! " ${dirs[*]} " =~ " ${dir} " ]]; then
+        if [[ ${#dirs[@]} -eq 0 ]] || [[ ! " ${dirs[*]} " =~ " ${dir} " ]]; then
             dirs+=("$dir")
         fi
     done < "$plan_file"
+    
+    if [[ ${#dirs[@]} -eq 0 ]]; then
+        return 0
+    fi
     
     for dir in "${dirs[@]}"; do
         local checksum_file="$dir/.checksums"
@@ -542,7 +547,7 @@ main() {
         log_warn "DRY-RUN MODE - No changes will be made"
     fi
     
-    echo ""
+    echo "" >&2
     
     # Load configuration (CLI > YAML > interactive)
     load_import_config

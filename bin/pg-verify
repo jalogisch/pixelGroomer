@@ -375,6 +375,7 @@ main() {
                 log_info "  Verified: $total_ok files"
                 [[ $dirs_without_checksums -gt 0 ]] && \
                     log_info "  Directories without checksums: $dirs_without_checksums"
+                : # Ensure proper exit code
             else
                 log_error "Verification found issues!"
                 log_info "  OK: $total_ok"

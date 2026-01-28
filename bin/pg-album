@@ -539,6 +539,8 @@ cmd_export() {
     echo ""
     log_success "Exported $copied of $total files to $export_dir"
     [[ $failed -gt 0 ]] && log_warn "$failed files failed"
+    
+    : # Ensure proper exit code
 }
 
 # =============================================================================
