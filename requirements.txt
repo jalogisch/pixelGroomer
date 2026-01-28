@@ -1,2 +1,7 @@
 # PixelGroomer Python Dependencies
 PyYAML>=6.0
+
+# Test dependencies
+pytest>=7.0
+pytest-timeout>=2.0
+Pillow>=10.0
