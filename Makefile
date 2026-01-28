@@ -7,7 +7,7 @@ VENV = .venv
 
 SCRIPTS = pg-import pg-rename pg-exif pg-album pg-develop pg-verify pg-test-processors
 
-.PHONY: all setup install uninstall check deps clean lint help
+.PHONY: all setup install uninstall check deps clean lint test test-fast test-coverage help
 
 all: help
 
@@ -18,6 +18,9 @@ help:
 	@echo "  make setup       Setup virtual environment and dependencies"
 	@echo "  make check       Verify dependencies are installed"
 	@echo "  make lint        Run ShellCheck validation"
+	@echo "  make test        Run all tests"
+	@echo "  make test-fast   Run tests excluding slow ones"
+	@echo "  make test-coverage  Run tests with coverage report"
 	@echo "  make deps        Install external dependencies (macOS only)"
 	@echo "  make install     Install scripts to $(BINDIR)"
 	@echo "  make uninstall   Remove scripts from $(BINDIR)"
@@ -26,6 +29,7 @@ help:
 	@echo "Quick start:"
 	@echo "  1. make deps     # Install exiftool, darktable, etc."
 	@echo "  2. make setup    # Create venv and configure"
+	@echo "  3. make test     # Run tests to verify everything works"
 
 setup:
 	@./setup.sh
@@ -79,3 +83,17 @@ lint:
 	@echo "Running ShellCheck..."
 	shellcheck bin/pg-* lib/*.sh setup.sh examples/*.sh
 	@echo "All scripts passed ShellCheck validation."
+
+test:
+	@echo "Running all tests..."
+	@source $(VENV)/bin/activate && pytest tests/ -v --timeout=60
+
+test-fast:
+	@echo "Running fast tests (excluding slow)..."
+	@source $(VENV)/bin/activate && pytest tests/ -v --timeout=60 -m "not slow"
+
+test-coverage:
+	@echo "Running tests with coverage..."
+	@source $(VENV)/bin/activate && pip install pytest-cov -q
+	@source $(VENV)/bin/activate && pytest tests/ --cov=lib --cov-report=html --cov-report=term
+	@echo "Coverage report generated in htmlcov/"
