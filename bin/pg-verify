@@ -210,7 +210,7 @@ verify_checksums() {
         local filepath="${dir}/${filename}"
         
         if [[ ! -f "$filepath" ]]; then
-            ((missing++))
+            ((++missing))
             errors+=("MISSING: $filename")
             continue
         fi
@@ -219,9 +219,9 @@ verify_checksums() {
         actual_sum=$(generate_checksum "$filepath" "$CHECKSUM_ALGORITHM")
         
         if [[ "$actual_sum" == "$expected_sum" ]]; then
-            ((ok++))
+            ((++ok))
         else
-            ((failed++))
+            ((++failed))
             errors+=("MISMATCH: $filename")
         fi
     done < "$checksum_file"
@@ -267,13 +267,13 @@ update_checksums() {
             local existing_sum
             existing_sum=$(map_get "$existing_sums" "$filename")
             echo "${existing_sum}  $filename" >> "$temp_file"
-            ((kept++))
+            ((++kept))
         else
             # Generate new
             local checksum
             checksum=$(generate_checksum "$file" "$CHECKSUM_ALGORITHM")
             echo "$checksum  $filename" >> "$temp_file"
-            ((added++))
+            ((++added))
         fi
     done
     
@@ -322,7 +322,7 @@ main() {
             local i=0
             
             for dir in "${dirs[@]}"; do
-                ((i++))
+                ((++i))
                 log_progress "$i" "$total_dirs" "Scanning"
                 
                 local count
@@ -345,7 +345,7 @@ main() {
             local i=0
             
             for dir in "${dirs[@]}"; do
-                ((i++))
+                ((++i))
                 log_progress "$i" "$total_dirs" "Verifying"
                 
                 local result
@@ -354,7 +354,7 @@ main() {
                 IFS='|' read -r ok failed missing errors <<< "$result"
                 
                 if [[ "$errors" == "no_checksum_file" ]]; then
-                    ((dirs_without_checksums++))
+                    ((++dirs_without_checksums))
                     continue
                 fi
                 
@@ -402,7 +402,7 @@ main() {
             local i=0
             
             for dir in "${dirs[@]}"; do
-                ((i++))
+                ((++i))
                 log_progress "$i" "$total_dirs" "Updating"
                 
                 local result

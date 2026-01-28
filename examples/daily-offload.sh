@@ -75,7 +75,7 @@ count_photos() {
     local count=0
     
     while IFS= read -r -d '' _; do
-        ((count++))
+        ((++count))
     done < <(find "$dir" -type f \( \
         -iname "*.cr2" -o -iname "*.cr3" -o -iname "*.nef" -o \
         -iname "*.arw" -o -iname "*.orf" -o -iname "*.rw2" -o \

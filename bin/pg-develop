@@ -358,7 +358,7 @@ main() {
     local i=0
     
     for raw_file in "${raw_files[@]}"; do
-        ((i++))
+        ((++i))
         
         local filename
         filename=$(basename "$raw_file")
@@ -371,16 +371,16 @@ main() {
         # Check if output exists
         if [[ -f "$output_file" && "$OVERWRITE" != "true" && "$DRY_RUN" != "true" ]]; then
             [[ "$VERBOSE" == "true" ]] && log_info "Skipping (exists): $basename.jpg"
-            ((skipped++))
+            ((++skipped))
             continue
         fi
         
         # Develop
         if develop_file "$raw_file" "$output_file" "$processor"; then
-            ((success++))
+            ((++success))
             [[ "$VERBOSE" == "true" ]] && log_success "Developed: $basename.jpg"
         else
-            ((failed++))
+            ((++failed))
             log_error "Failed: $filename"
         fi
     done

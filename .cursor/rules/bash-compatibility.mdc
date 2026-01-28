@@ -70,6 +70,34 @@ diff <(cmd1) <(cmd2)
 cat <<< "$var"
 ```
 
+## Arithmetic with set -e
+
+When using `set -e` (errexit), be careful with arithmetic expressions:
+
+```bash
+# ❌ WRONG: ((i++)) fails when i=0
+local i=0
+for item in "${items[@]}"; do
+    ((i++))   # Returns exit code 1 when i=0, script exits!
+done
+
+# ✅ CORRECT: Use pre-increment ((++i))
+local i=0
+for item in "${items[@]}"; do
+    ((++i))   # Returns 1 (new value), exit code 0
+done
+
+# ✅ Alternative: Use assignment
+i=$((i + 1))
+```
+
+**Why?** The `((...))` construct returns exit code 1 when the expression evaluates to 0. Post-increment `((i++))` returns the OLD value (0), while pre-increment `((++i))` returns the NEW value (1).
+
+This affects any counter that starts at 0:
+- Loop counters (`((i++))`)
+- Success/failure counters (`((success++))`)
+- Any variable incremented from 0
+
 ## Testing
 
 Test scripts on macOS default bash:

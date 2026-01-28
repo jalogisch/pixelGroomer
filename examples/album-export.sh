@@ -89,7 +89,7 @@ count_images() {
     local count=0
     
     while IFS= read -r -d '' _; do
-        ((count++))
+        ((++count))
     done < <(find "$dir" -type f \( \
         -iname "*.jpg" -o -iname "*.jpeg" -o \
         -iname "*.cr2" -o -iname "*.cr3" -o -iname "*.nef" -o \
@@ -354,7 +354,7 @@ main() {
     local -a temp_files=()
     
     for file in "${source_files[@]}"; do
-        ((i++))
+        ((++i))
         local basename ext temp_file
         basename=$(basename "$file")
         ext=$(echo "${basename##*.}" | tr '[:upper:]' '[:lower:]')
@@ -386,7 +386,7 @@ main() {
     
     i=0
     for file in "${temp_files[@]}"; do
-        ((i++))
+        ((++i))
         [[ ! -f "$file" ]] && continue
         
         log_progress "$i" "$total" "Metadata"
@@ -417,7 +417,7 @@ main() {
     
     i=0
     for file in "${temp_files[@]}"; do
-        ((i++))
+        ((++i))
         [[ ! -f "$file" ]] && continue
         
         local basename output_file

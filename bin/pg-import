@@ -311,7 +311,7 @@ create_import_plan() {
     
     local i=0
     for file in "${files[@]}"; do
-        ((i++))
+        ((++i))
         
         if [[ "$VERBOSE" == "true" ]]; then
             log_progress "$i" "$total" "Analyzing"
@@ -365,7 +365,7 @@ execute_import() {
     local i=0
     
     while IFS='|' read -r source target date; do
-        ((i++))
+        ((++i))
         
         log_progress "$i" "$total" "Importing"
         
@@ -380,10 +380,10 @@ execute_import() {
             
             # Copy file with verification
             if safe_copy "$source" "$target" "true"; then
-                ((success++))
+                ((++success))
                 [[ "$VERBOSE" == "true" ]] && log_success "Imported: $(basename "$target")"
             else
-                ((failed++))
+                ((++failed))
                 log_error "Failed: $(basename "$source")"
             fi
         fi

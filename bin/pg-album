@@ -254,7 +254,7 @@ cmd_add() {
         
         # Skip if already in album
         if [[ -L "$link_path" ]]; then
-            ((skipped++))
+            ((++skipped))
             continue
         fi
         
@@ -266,7 +266,7 @@ cmd_add() {
             counter=1
             
             while [[ -e "${album_path}/${base}_${counter}.${ext}" ]]; do
-                ((counter++))
+                ((++counter))
             done
             
             link_path="${album_path}/${base}_${counter}.${ext}"
@@ -274,7 +274,7 @@ cmd_add() {
         
         # Create symlink
         ln -s "$abs_path" "$link_path"
-        ((added++))
+        ((++added))
     done
     
     # Update metadata
@@ -313,7 +313,7 @@ cmd_remove() {
         
         if [[ -L "$link_path" ]]; then
             rm "$link_path"
-            ((removed++))
+            ((++removed))
         else
             log_warn "Not in album: $filename"
         fi
@@ -390,7 +390,7 @@ cmd_show() {
             echo "  $filename [BROKEN -> $target]"
         fi
         
-        ((count++))
+        ((++count))
     done
     
     echo ""
@@ -523,15 +523,15 @@ cmd_export() {
         # Check if source exists
         if [[ ! -e "$link" ]]; then
             log_warn "Broken link: $filename"
-            ((failed++))
+            ((++failed))
             continue
         fi
         
         # Copy the actual file (following symlink)
         if cp -L "$link" "$target_file" 2>/dev/null; then
-            ((copied++))
+            ((++copied))
         else
-            ((failed++))
+            ((++failed))
             log_error "Failed to copy: $filename"
         fi
     done

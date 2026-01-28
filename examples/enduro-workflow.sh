@@ -102,13 +102,13 @@ count_files_by_type() {
         ext=$(echo "${file##*.}" | tr '[:upper:]' '[:lower:]')
         case "$ext" in
             cr2|cr3|nef|arw|orf|rw2|dng|raf)
-                ((raw_count++))
+                ((++raw_count))
                 ;;
             jpg|jpeg)
-                ((jpg_count++))
+                ((++jpg_count))
                 ;;
             *)
-                ((other_count++))
+                ((++other_count))
                 ;;
         esac
     done < <(find "$dir" -type f \( -iname "*.cr2" -o -iname "*.cr3" -o -iname "*.nef" -o -iname "*.arw" -o -iname "*.orf" -o -iname "*.rw2" -o -iname "*.dng" -o -iname "*.raf" -o -iname "*.jpg" -o -iname "*.jpeg" \) -print0 2>/dev/null)
@@ -501,7 +501,7 @@ main() {
         
         local i=0
         for file in "${jpg_files[@]}"; do
-            ((i++))
+            ((++i))
             local basename
             basename=$(basename "$file")
             local output_file="${output_dir}/${basename}"

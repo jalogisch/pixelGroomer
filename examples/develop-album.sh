@@ -85,7 +85,7 @@ list_presets() {
             local name
             name=$(basename "$style_file" .dtstyle)
             echo "  - $name"
-            ((count++))
+            ((++count))
         done < <(find "$styles_dir" -name "*.dtstyle" -print0 2>/dev/null | sort -z)
         
         if [[ $count -eq 0 ]]; then
@@ -110,7 +110,7 @@ count_raw_files() {
     local count=0
     
     while IFS= read -r -d '' _; do
-        ((count++))
+        ((++count))
     done < <(find "$dir" -type f \( \
         -iname "*.cr2" -o -iname "*.cr3" -o -iname "*.nef" -o \
         -iname "*.arw" -o -iname "*.orf" -o -iname "*.rw2" -o \
@@ -340,7 +340,7 @@ main() {
     local failed=0
     
     for file in "${raw_files[@]}"; do
-        ((i++))
+        ((++i))
         local basename
         basename=$(basename "$file")
         
@@ -355,9 +355,9 @@ main() {
         
         # Run development
         if "$PIXELGROOMER_ROOT/bin/pg-develop" "${develop_args[@]}" 2>/dev/null; then
-            ((success++))
+            ((++success))
         else
-            ((failed++))
+            ((++failed))
             log_warn "Failed to develop: $basename"
         fi
     done

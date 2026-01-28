@@ -289,11 +289,11 @@ main() {
         local i=0
         
         for file in "${all_files[@]}"; do
-            ((i++))
+            ((++i))
             log_progress "$i" "$total" "Removing"
             
             if remove_metadata "$file" >/dev/null 2>&1; then
-                ((success++))
+                ((++success))
             else
                 log_error "Failed: $(basename "$file")"
             fi

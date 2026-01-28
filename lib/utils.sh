@@ -162,7 +162,7 @@ prompt_select() {
     local i=1
     for opt in "${options[@]}"; do
         echo "  $i) $opt"
-        ((i++))
+        ((++i))
     done
     
     while true; do

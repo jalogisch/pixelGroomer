@@ -319,7 +319,7 @@ main() {
         
         if [[ "$old_name" != "$new_name" ]]; then
             echo "  $old_name -> $new_name"
-            ((i++))
+            ((++i))
             [[ $i -ge 20 && "$VERBOSE" != "true" ]] && break
         fi
     done
@@ -335,7 +335,7 @@ main() {
     for entry in "${rename_plan[@]}"; do
         local old_file="${entry%%|*}"
         local new_file="${entry##*|}"
-        [[ "$old_file" != "$new_file" ]] && ((rename_count++))
+        [[ "$old_file" != "$new_file" ]] && ((++rename_count))
     done
     
     if [[ $rename_count -eq 0 ]]; then
@@ -365,26 +365,26 @@ main() {
         
         # Skip if same name
         if [[ "$old_file" == "$new_file" ]]; then
-            ((skipped++))
+            ((++skipped))
             continue
         fi
         
         if [[ "$DRY_RUN" == "true" ]]; then
             [[ "$VERBOSE" == "true" ]] && log_info "[DRY-RUN] $(basename "$old_file") -> $(basename "$new_file")"
-            ((success++))
+            ((++success))
         else
             # Handle conflicts
             if [[ -e "$new_file" ]]; then
                 log_warn "Conflict: $new_file already exists, skipping"
-                ((failed++))
+                ((++failed))
                 continue
             fi
             
             if mv "$old_file" "$new_file"; then
-                ((success++))
+                ((++success))
                 [[ "$VERBOSE" == "true" ]] && log_success "Renamed: $(basename "$new_file")"
             else
-                ((failed++))
+                ((++failed))
                 log_error "Failed: $(basename "$old_file")"
             fi
         fi
