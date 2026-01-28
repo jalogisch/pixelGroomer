@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 # PixelGroomer - Configuration Loader
 # Sources .env file and provides config access functions
+#
+# Priority (highest to lowest):
+#   1. Environment variables passed to script
+#   2. .env file values
+#   3. Default values in this file
 
 set -euo pipefail
 
@@ -10,7 +15,46 @@ PIXELGROOMER_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # Load venv helper
 source "${PIXELGROOMER_ROOT}/lib/venv.sh"
 
-# Default values (can be overridden by .env)
+# Track which variables were set by the caller (before we do anything)
+# This allows us to preserve caller's env vars while still letting .env override defaults
+_pg_caller_vars=""
+[[ -n "${PHOTO_LIBRARY:-}" ]] && _pg_caller_vars="$_pg_caller_vars PHOTO_LIBRARY"
+[[ -n "${ALBUM_DIR:-}" ]] && _pg_caller_vars="$_pg_caller_vars ALBUM_DIR"
+[[ -n "${EXPORT_DIR:-}" ]] && _pg_caller_vars="$_pg_caller_vars EXPORT_DIR"
+[[ -n "${GENERATE_CHECKSUMS:-}" ]] && _pg_caller_vars="$_pg_caller_vars GENERATE_CHECKSUMS"
+[[ -n "${FOLDER_STRUCTURE:-}" ]] && _pg_caller_vars="$_pg_caller_vars FOLDER_STRUCTURE"
+[[ -n "${NAMING_PATTERN:-}" ]] && _pg_caller_vars="$_pg_caller_vars NAMING_PATTERN"
+
+# Load .env file if it exists
+# Only overrides variables NOT set by calling environment
+load_config() {
+    local env_file="${PIXELGROOMER_ROOT}/.env"
+    
+    if [[ -f "$env_file" ]]; then
+        # Source the .env file, but only export valid variable assignments
+        # that weren't set by the caller
+        while IFS= read -r line || [[ -n "$line" ]]; do
+            # Skip comments and empty lines
+            [[ "$line" =~ ^[[:space:]]*# ]] && continue
+            [[ -z "${line// }" ]] && continue
+            
+            # Only process valid variable assignments
+            if [[ "$line" =~ ^([A-Za-z_][A-Za-z0-9_]*)= ]]; then
+                local var_name="${BASH_REMATCH[1]}"
+                # Only set if not set by caller
+                if [[ "$_pg_caller_vars" != *" $var_name"* ]]; then
+                    # Evaluate the line to expand variables like $HOME
+                    eval "export $line" 2>/dev/null || true
+                fi
+            fi
+        done < "$env_file"
+    fi
+}
+
+# Load .env first (so it can override defaults but not caller's vars)
+load_config
+
+# Default values (applied after .env, only if still not set)
 : "${PHOTO_LIBRARY:=$HOME/Pictures/PhotoLibrary}"
 : "${ALBUM_DIR:=$HOME/Pictures/Albums}"
 : "${EXPORT_DIR:=$HOME/Pictures/Export}"
@@ -27,26 +71,6 @@ source "${PIXELGROOMER_ROOT}/lib/venv.sh"
 : "${CHECKSUM_ALGORITHM:=sha256}"
 [[ -z "${FOLDER_STRUCTURE:-}" ]] && FOLDER_STRUCTURE='{year}-{month}-{day}'
 : "${PROMPT_ARCHIVE_DIR:=false}"
-
-# Load .env file if it exists
-load_config() {
-    local env_file="${PIXELGROOMER_ROOT}/.env"
-    
-    if [[ -f "$env_file" ]]; then
-        # Source the .env file, but only export valid variable assignments
-        while IFS= read -r line || [[ -n "$line" ]]; do
-            # Skip comments and empty lines
-            [[ "$line" =~ ^[[:space:]]*# ]] && continue
-            [[ -z "${line// }" ]] && continue
-            
-            # Only process valid variable assignments
-            if [[ "$line" =~ ^[A-Za-z_][A-Za-z0-9_]*= ]]; then
-                # Evaluate the line to expand variables like $HOME
-                eval "export $line" 2>/dev/null || true
-            fi
-        done < "$env_file"
-    fi
-}
 
 # Load .import.yaml from a directory (typically SD card)
 # Returns key=value pairs on stdout
@@ -158,5 +182,5 @@ get_target_dir() {
     echo "${base_dir}/${structure}"
 }
 
-# Initialize config on source
-load_config
+# Note: load_config is called early in this file, before defaults are set
+# This allows .env to override defaults while caller's env vars take priority
