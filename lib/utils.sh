@@ -37,11 +37,11 @@ fi
 # =============================================================================
 
 log_info() {
-    echo -e "${COLOR_BLUE}[INFO]${COLOR_RESET} $*"
+    echo -e "${COLOR_BLUE}[INFO]${COLOR_RESET} $*" >&2
 }
 
 log_success() {
-    echo -e "${COLOR_GREEN}[OK]${COLOR_RESET} $*"
+    echo -e "${COLOR_GREEN}[OK]${COLOR_RESET} $*" >&2
 }
 
 log_warn() {
@@ -59,7 +59,7 @@ log_debug() {
 }
 
 log_step() {
-    echo -e "${COLOR_CYAN}==>${COLOR_RESET} ${COLOR_BOLD}$*${COLOR_RESET}"
+    echo -e "${COLOR_CYAN}==>${COLOR_RESET} ${COLOR_BOLD}$*${COLOR_RESET}" >&2
 }
 
 # Progress indicator for long operations
@@ -75,10 +75,10 @@ log_progress() {
     # shellcheck disable=SC2046  # Word splitting intended for seq output
     printf "\r${COLOR_CYAN}[%-50s]${COLOR_RESET} %3d%% %s" \
         "$(printf '#%.0s' $(seq 1 $filled 2>/dev/null || true))$(printf ' %.0s' $(seq 1 $empty 2>/dev/null || true))" \
-        "$percent" "$message"
+        "$percent" "$message" >&2
     
     if [[ $current -eq $total ]]; then
-        echo ""
+        echo "" >&2
     fi
 }
 
@@ -90,6 +90,15 @@ log_progress() {
 confirm() {
     local message="${1:-Continue?}"
     local default="${2:-n}"
+    
+    # Non-interactive mode: return based on default
+    if [[ "${PG_NON_INTERACTIVE:-}" == "1" ]]; then
+        if [[ "$default" == "y" ]]; then
+            return 0
+        else
+            return 1
+        fi
+    fi
     
     local prompt
     if [[ "$default" == "y" ]]; then
@@ -116,6 +125,13 @@ prompt_input() {
     local message="$1"
     local default="${2:-}"
     local var_name="${3:-REPLY}"
+    
+    # Non-interactive mode: use default value
+    if [[ "${PG_NON_INTERACTIVE:-}" == "1" ]]; then
+        printf -v "$var_name" '%s' "$default"
+        echo "$default"
+        return 0
+    fi
     
     local prompt_text="$message"
     if [[ -n "$default" ]]; then
