@@ -18,6 +18,7 @@ source "$SCRIPT_DIR/../lib/utils.sh"
 FILES=()
 AUTHOR=""
 COPYRIGHT=""
+CREDIT=""
 EVENT=""
 LOCATION=""
 GPS=""
@@ -46,6 +47,7 @@ ARGUMENTS:
 OPTIONS:
     -a, --author <name>   Set Artist/Creator
     -c, --copyright <text> Set Copyright notice
+    --credit <text>       Set credit line (IPTC:Credit)
     -e, --event <name>    Set Event name
     -l, --location <loc>  Set Location
     --gps <lat,lon>       Set GPS coordinates (e.g., "52.52,13.405")
@@ -86,6 +88,10 @@ parse_args() {
                 ;;
             -c|--copyright)
                 COPYRIGHT="$2"
+                shift 2
+                ;;
+            --credit)
+                CREDIT="$2"
                 shift 2
                 ;;
             -e|--event)
@@ -194,6 +200,7 @@ write_metadata() {
     local py_args=""
     [[ -n "$AUTHOR" ]] && py_args+="author='$AUTHOR', "
     [[ -n "$COPYRIGHT" ]] && py_args+="copyright='$COPYRIGHT', "
+    [[ -n "$CREDIT" ]] && py_args+="credit='$CREDIT', "
     [[ -n "$EVENT" ]] && py_args+="event='$EVENT', "
     [[ -n "$LOCATION" ]] && py_args+="location='$LOCATION', "
     [[ -n "$GPS" ]] && py_args+="gps='$GPS', "
@@ -310,6 +317,7 @@ main() {
     # Show what will be set
     [[ -n "$AUTHOR" ]] && log_info "Author: $AUTHOR"
     [[ -n "$COPYRIGHT" ]] && log_info "Copyright: $COPYRIGHT"
+    [[ -n "$CREDIT" ]] && log_info "Credit: $CREDIT"
     [[ -n "$EVENT" ]] && log_info "Event: $EVENT"
     [[ -n "$LOCATION" ]] && log_info "Location: $LOCATION"
     [[ -n "$GPS" ]] && log_info "GPS: $GPS"
