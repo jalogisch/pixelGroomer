@@ -8,10 +8,25 @@ This document shows how to combine PixelGroomer tools into complete workflows.
 
 | Script | Purpose |
 |--------|---------|
+| `holiday-import.sh` | Import from SD card in trip mode (identity only, one folder per day) |
 | `daily-offload.sh` | Simple daily SD card import for multi-day events |
 | `develop-album.sh` | Develop RAW files with unified darktable preset |
 | `album-export.sh` | Export album with licensing metadata and watermark |
 | `enduro-workflow.sh` | Complete workflow with development and web export |
+
+---
+
+## Holiday Import Workflow
+
+The `examples/holiday-import.sh` script imports all photos from an SD card in trip mode. No event or location — only author, copyright, and credit from the card's `.import.yaml` or .env. One folder per day by EXIF date. Ideal for post-holiday import.
+
+### Usage
+
+```bash
+./examples/holiday-import.sh /Volumes/CARD [--no-delete] [--dry-run] [--output DIR]
+```
+
+See [Workflow: Holiday import (SD card)](workflow.en.md#holiday-import-sd-card).
 
 ---
 

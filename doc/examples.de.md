@@ -8,10 +8,25 @@ Dieses Dokument zeigt, wie PixelGroomer-Tools zu vollständigen Workflows kombin
 
 | Script | Zweck |
 |--------|-------|
+| `holiday-import.sh` | Import von SD-Karte im Trip-Modus (nur Identität, ein Ordner pro Tag) |
 | `daily-offload.sh` | Einfacher täglicher SD-Karten-Import für mehrtägige Events |
 | `develop-album.sh` | RAW-Dateien mit einheitlichem darktable-Preset entwickeln |
 | `album-export.sh` | Album-Export mit Lizenz-Metadaten und Wasserzeichen |
 | `enduro-workflow.sh` | Kompletter Workflow mit Entwicklung und Web-Export |
+
+---
+
+## Urlaubs-Import Workflow
+
+Das Script `examples/holiday-import.sh` importiert alle Fotos von einer SD-Karte im Trip-Modus. Kein Event und Ort — nur Autor, Copyright und Credit aus der `.import.yaml` der Karte oder .env. Ein Ordner pro Tag nach EXIF-Datum. Ideal für den Import nach dem Urlaub.
+
+### Verwendung
+
+```bash
+./examples/holiday-import.sh /Volumes/CARD [--no-delete] [--dry-run] [--output DIR]
+```
+
+Siehe [Workflow: Urlaubs-Import (SD-Karte)](workflow.de.md#urlaubs-import-sd-karte).
 
 ---
 
