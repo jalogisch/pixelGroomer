@@ -25,6 +25,7 @@ class ExifTool:
         'description': ['-ImageDescription', '-XMP:Description', '-IPTC:Caption-Abstract'],
         'title': ['-XMP:Title', '-IPTC:ObjectName'],
         'keywords': ['-XMP:Subject', '-IPTC:Keywords'],
+        'credit': ['-IPTC:Credit'],
     }
     
     # Tags to read for common metadata
