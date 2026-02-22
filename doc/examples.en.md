@@ -13,6 +13,7 @@ This document shows how to combine PixelGroomer tools into complete workflows.
 | `develop-album.sh` | Develop RAW files with unified darktable preset |
 | `album-export.sh` | Export album with licensing metadata and watermark |
 | `enduro-workflow.sh` | Complete workflow with development and web export |
+| `adventure-camp-workflow.sh` | Weekend event import + RawTherapee develop (Adventure Camp, Stadtoldendorf) |
 
 ---
 
@@ -27,6 +28,21 @@ The `examples/holiday-import.sh` script imports all photos from an SD card in tr
 ```
 
 See [Workflow: Holiday import (SD card)](workflow.en.md#holiday-import-sd-card).
+
+---
+
+## Adventure Camp Workflow
+
+The `examples/adventure-camp-workflow.sh` script runs import (event "Adventure Camp", location "Stadtoldendorf") and then develops RAWs with RawTherapee using a Kodak-style preset. Ideal for a two-day weekend event.
+
+### Usage
+
+```bash
+./examples/adventure-camp-workflow.sh /Volumes/CARD [--output DIR] [--preset PATH] [--dry-run]
+./examples/adventure-camp-workflow.sh --skip-import ~/Pictures/PhotoLibrary/2026-02-22 --output ~/Desktop/Developed
+```
+
+A Kodak-style PP3 can be shipped in `templates/rawtherapee-kodak-portra.pp3` or you set `RAWTHERAPEE_PRESET` in .env or pass `--preset`. See [Workflow: Weekend event with RawTherapee](workflow.en.md#weekend-event-with-rawtherapee-adventure-camp).
 
 ---
 
