@@ -23,6 +23,7 @@ AUTHOR=""
 DRY_RUN=false
 NO_DELETE=false
 VERBOSE=false
+TRIP_MODE=false
 
 # Track what was set via CLI (for priority handling)
 CLI_EVENT=""
@@ -51,12 +52,14 @@ OPTIONS:
     -o, --output <dir>    Archive/output directory (overrides PHOTO_LIBRARY)
     -n, --dry-run         Preview changes without modifying files
     --no-delete           Don't ask to delete source files after import
+    -t, --trip            Trip mode: skip event/location prompts, date-only names when no event
     -v, --verbose         Show detailed output
     -h, --help            Show this help message
 
 EXAMPLES:
     pg-import /Volumes/EOS_DIGITAL --event "Endurotraining" --location "Stadtoldendorf"
     pg-import /Volumes/EOS_DIGITAL    # Uses .import.yaml or prompts
+    pg-import /Volumes/CARD --trip    # Import without event/location prompts (date-only names)
     pg-import ./photos --dry-run      # Preview import
 
 CONFIGURATION:
@@ -98,6 +101,10 @@ parse_args() {
                 ;;
             --no-delete)
                 NO_DELETE=true
+                shift
+                ;;
+            -t|--trip)
+                TRIP_MODE=true
                 shift
                 ;;
             -v|--verbose)
