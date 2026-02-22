@@ -258,6 +258,14 @@ generate_filename() {
     local ext
     ext=$(get_extension "$file")
     
+    # Trip mode with no event: date + sequence only
+    if [[ "$TRIP_MODE" == "true" && -z "${EVENT:-}" ]]; then
+        local padded_seq
+        padded_seq=$(pad_number "$sequence" "3")
+        echo "${date}_${padded_seq}.${ext}"
+        return 0
+    fi
+    
     local pattern="$NAMING_PATTERN"
     
     # Replace placeholders
