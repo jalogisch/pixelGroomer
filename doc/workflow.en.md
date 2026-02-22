@@ -230,6 +230,20 @@ Resize (`--resize`) is only applied when using the ImageMagick processor.
 
 Other CLI tools (e.g. **sips** on macOS, **dcraw**/ufraw) can be run manually but are not integrated in pg-develop.
 
+### Weekend event with RawTherapee (Adventure Camp)
+
+For a named weekend event (e.g. "Adventure Camp" at "Stadtoldendorf"): import with event and location, then develop RAWs with RawTherapee and a Kodak-style preset.
+
+1. **Import:** Put event and location in `.import.yaml` on the SD card or pass via CLI:
+   `pg-import /Volumes/CARD --event "Adventure Camp" --location "Stadtoldendorf"`
+
+2. **Develop:** Use RawTherapee with a Kodak-style PP3 preset:
+   `pg-develop ~/Pictures/PhotoLibrary/2026-02-22/*.cr3 --processor rawtherapee --preset /path/to/kodak.pp3 --output ./developed`
+
+   If the project ships a preset (e.g. `templates/rawtherapee-kodak-portra.pp3`), use that path. Otherwise use a preset from [RawPedia Film Simulation](https://rawpedia.rawtherapee.com/Film_Simulation) or set `RAWTHERAPEE_PRESET` in .env.
+
+3. **Example script:** `./examples/adventure-camp-workflow.sh /Volumes/CARD` runs import and develop in one go (see [Examples](examples.en.md)).
+
 ## Phase 5: Sharing & Export
 
 ### Export album for family/friends
