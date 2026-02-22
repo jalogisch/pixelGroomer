@@ -159,15 +159,29 @@ class TestExifToolWrite:
     def test_write_copyright(self, tmp_path: Path):
         """write() sets copyright field."""
         photo = create_jpeg(tmp_path / 'test.jpg')
-        
+
         exif = ExifTool()
         result = exif.write(photo, copyright='© 2026 Test')
-        
+
         assert result is True
-        
+
         value = get_exif(photo, 'Copyright')
         assert '2026' in value
-    
+
+    @requires_exiftool
+    @requires_pillow
+    def test_write_credit(self, tmp_path: Path):
+        """write() sets credit field (IPTC:Credit)."""
+        photo = create_jpeg(tmp_path / 'test.jpg')
+
+        exif = ExifTool()
+        result = exif.write(photo, credit='Test Credit')
+
+        assert result is True
+
+        value = get_exif(photo, 'IPTC:Credit')
+        assert value == 'Test Credit'
+
     @requires_exiftool
     @requires_pillow
     def test_write_event(self, tmp_path: Path):
