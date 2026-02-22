@@ -240,7 +240,7 @@ Für ein benanntes Wochenend-Event (z. B. "Adventure Camp" in "Stadtoldendorf"
 2. **Entwickeln:** RawTherapee mit Kodak-PP3-Preset:  
    `pg-develop ~/Pictures/PhotoLibrary/2026-02-22/*.cr3 --processor rawtherapee --preset /pfad/zu/kodak.pp3 --output ./developed`
 
-   Wenn das Projekt ein Preset mitliefert (z. B. `templates/rawtherapee-kodak-portra.pp3`), diesen Pfad nutzen. Sonst Preset von [RawPedia Film Simulation](https://rawpedia.rawtherapee.com/Film_Simulation) verwenden oder `RAWTHERAPEE_PRESET` in .env setzen.
+   Wenn das Projekt ein Preset mitliefert (z. B. `templates/rawtherapee-kodak-portra.pp3`), diesen Pfad nutzen. Sonst ein PP3 aus der Community verwenden oder in RawTherapee anlegen; `RAWTHERAPEE_PRESET` in .env setzen oder `--preset` übergeben. (RawPedia [Film Simulation](https://rawpedia.rawtherapee.com/Film_Simulation) nutzt HaldCLUT in der GUI; für die CLI brauchst du eine .pp3-Datei.) Kodak-Portra-PP3s kannst du z. B. von [TheSquirrelMafia/RawTherapee-PP3-Settings](https://github.com/TheSquirrelMafia/RawTherapee-PP3-Settings) laden (unter *TSM - Film Simulations / Color Films*). Das Projekt liefert kein Preset mit: Wir bündeln nur eines mit klarer permissiver Lizenz (CC0/Unlicense/MIT); ein solches PP3 wurde nicht gefunden. Vollständige Details: [RawTherapee-Preset-Recherche](preset-research.de.md).
 
 3. **Beispiel-Script:** `./examples/adventure-camp-workflow.sh /Volumes/CARD` führt Import und Entwicklung in einem Durchlauf aus (siehe [Beispiele](examples.de.md)).
 

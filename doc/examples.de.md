@@ -42,7 +42,7 @@ Das Script `examples/adventure-camp-workflow.sh` führt Import (Event "Adventure
 ./examples/adventure-camp-workflow.sh --skip-import ~/Pictures/PhotoLibrary/2026-02-22 --output ~/Desktop/Developed
 ```
 
-Ein Kodak-PP3 kann in `templates/rawtherapee-kodak-portra.pp3` mitgeliefert werden; sonst `RAWTHERAPEE_PRESET` in .env setzen oder `--preset` angeben. Siehe [Workflow: Wochenend-Event mit RawTherapee](workflow.de.md#wochenend-event-mit-rawtherapee-adventure-camp).
+Ein Kodak-PP3 kann in `templates/rawtherapee-kodak-portra.pp3` mitgeliefert werden; sonst `RAWTHERAPEE_PRESET` in .env setzen oder `--preset` angeben. PP3 aus der Community nutzen oder in RawTherapee anlegen (RawPedia Film Simulation = HaldCLUT in der GUI; CLI braucht eine .pp3-Datei). Kodak-Portra-PP3s von [TheSquirrelMafia/RawTherapee-PP3-Settings](https://github.com/TheSquirrelMafia/RawTherapee-PP3-Settings) laden (z. B. *TSM - Film Simulations / Color Films*). Das Projekt liefert kein Preset mit (kein permissiv lizenziertes PP3 gefunden); siehe [RawTherapee-Preset-Recherche](preset-research.de.md). [Workflow: Wochenend-Event mit RawTherapee](workflow.de.md#wochenend-event-mit-rawtherapee-adventure-camp).
 
 ---
 
