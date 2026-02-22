@@ -83,6 +83,16 @@ pg-import /Volumes/CARD --trip
 
 Copy `templates/.import.yaml.identity` to each SD card as `DCIM/.import.yaml`. It sets author, copyright (e.g. Unlicense), and credit (artist name). Leave event and location unset for trip import.
 
+### Holiday import (SD card)
+
+After a holiday, import all photos from the SD card with no event or location — only author, copyright, and credit (identity). Copy `templates/.import.yaml.identity` to the card as `DCIM/.import.yaml`, or rely on `.env`. Run import in trip mode for one folder per day and date-only filenames:
+
+```bash
+pg-import /Volumes/CARD --trip --no-delete
+```
+
+Or use the wrapper script: `./examples/holiday-import.sh /Volumes/CARD`
+
 ### What happens during import?
 
 1. **Load configuration** (Priority: SD card → .env → CLI)
