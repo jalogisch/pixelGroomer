@@ -150,6 +150,13 @@ detect_processor() {
             log_warn "darktable-cli not found, falling back to imagemagick"
             echo "imagemagick"
         fi
+    elif [[ "$PROCESSOR" == "rawtherapee" ]]; then
+        if command -v rawtherapee-cli &>/dev/null; then
+            echo "rawtherapee"
+        else
+            log_warn "rawtherapee-cli not found, falling back to imagemagick"
+            echo "imagemagick"
+        fi
     else
         echo "imagemagick"
     fi
@@ -164,6 +171,9 @@ check_processor() {
             ;;
         imagemagick)
             require_command "convert" "imagemagick"
+            ;;
+        rawtherapee)
+            require_command "rawtherapee-cli" "rawtherapee"
             ;;
         *)
             log_error "Unknown processor: $proc"
