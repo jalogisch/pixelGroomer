@@ -3,6 +3,7 @@ Integration tests for pg-import script.
 """
 
 import os
+import re
 import subprocess
 from pathlib import Path
 from datetime import datetime
@@ -86,7 +87,7 @@ class TestPgImportBasic:
         
         # Files should contain event name (default pattern is {date}_{event}_{seq:03d})
         for f in imported_files:
-            assert 'Wedding' in f.name
+            assert 'Endurotraining' in f.name
 
 
 class TestPgImportWithEvent:
@@ -366,3 +367,68 @@ class TestPgImportEdgeCases:
         )
         
         assert result.returncode == 0
+
+
+class TestPgImportTrip:
+    """Tests for pg-import --trip mode (no event/location prompts, date-only names when no event)."""
+
+    def test_import_help_mentions_trip(self, run_script):
+        """pg-import --help mentions --trip."""
+        result = run_script('pg-import', '--help')
+        assert result.returncode == 0
+        output = result.stdout + result.stderr
+        assert '--trip' in output
+        assert 'trip' in output.lower()
+
+    @requires_exiftool
+    @requires_pillow
+    def test_trip_mode_date_only_filenames(self, run_script, temp_sd_card: Path, test_env):
+        """pg-import --trip with no event produces date-only filenames (YYYYMMDD_NNN.ext)."""
+        archive_dir = test_env['PHOTO_LIBRARY']
+
+        result = run_script(
+            'pg-import',
+            str(temp_sd_card),
+            '--trip',
+            '--no-delete',
+            env=test_env
+        )
+
+        assert result.returncode == 0
+
+        archive_path = Path(archive_dir)
+        imported = list(archive_path.rglob('*.jpg')) + list(archive_path.rglob('*.JPG'))
+        assert len(imported) > 0
+
+        # Filenames should be YYYYMMDD_NNN.ext (e.g. 20260124_001.jpg)
+        pattern = re.compile(r'^\d{8}_\d{3}\.(?:jpg|JPG)$')
+        for f in imported:
+            assert pattern.match(f.name), f"Expected date_seq.ext, got {f.name}"
+
+    @requires_exiftool
+    @requires_pillow
+    def test_trip_mode_event_from_yaml(self, run_script, tmp_path: Path, test_env):
+        """pg-import --trip with event in .import.yaml uses event in filename."""
+        sd_root = tmp_path / 'SD_CARD'
+        sd_root.mkdir()
+        create_sd_card_structure(sd_root, num_photos=2)
+        create_import_yaml(sd_root, event='AlpsTour', location='Sölk Pass')
+
+        archive_dir = test_env['PHOTO_LIBRARY']
+
+        result = run_script(
+            'pg-import',
+            str(sd_root),
+            '--trip',
+            '--no-delete',
+            env=test_env
+        )
+
+        assert result.returncode == 0
+
+        archive_path = Path(archive_dir)
+        imported = list(archive_path.rglob('*.jpg')) + list(archive_path.rglob('*.JPG'))
+        assert len(imported) > 0
+
+        for f in imported:
+            assert 'AlpsTour' in f.name, f"Expected event in filename, got {f.name}"
