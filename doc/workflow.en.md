@@ -208,6 +208,18 @@ photo.cr3.xmp       # Darktable edits
 pg-develop photo.cr3 --output ./export/
 ```
 
+### Command-line raw development alternatives
+
+pg-develop supports three processors (choose with `--processor` or `RAW_PROCESSOR` in .env):
+
+- **Darktable** — High-quality RAW processing, presets and XMP sidecars. Install: `brew install darktable`
+- **ImageMagick** — Faster, simpler (uses dcraw). Install: `brew install imagemagick`
+- **RawTherapee** — PP3 presets and film simulation (e.g. Kodak-style looks). Install: `brew install rawtherapee`
+
+Resize (`--resize`) is only applied when using the ImageMagick processor.
+
+Other CLI tools (e.g. **sips** on macOS, **dcraw**/ufraw) can be run manually but are not integrated in pg-develop.
+
 ## Phase 5: Sharing & Export
 
 ### Export album for family/friends
