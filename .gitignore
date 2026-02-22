@@ -39,6 +39,9 @@ __pycache__/
 *.temp
 .checksums
 
+# Git worktrees (isolated branches)
+.worktrees/
+
 # Photo library (if accidentally placed in repo)
 PhotoLibrary/
 Albums/
