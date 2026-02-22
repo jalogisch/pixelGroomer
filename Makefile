@@ -5,7 +5,7 @@ PREFIX ?= /usr/local
 BINDIR = $(PREFIX)/bin
 VENV = .venv
 
-SCRIPTS = pg-import pg-rename pg-exif pg-album pg-develop pg-verify pg-test-processors
+SCRIPTS = pg-import pg-rename pg-exif pg-album pg-develop pg-verify pg-test-processors pg-setup-darktable
 
 .PHONY: all setup install uninstall check deps clean lint test test-fast test-coverage help
 
