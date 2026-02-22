@@ -1,5 +1,7 @@
 # Code of Conduct
 
+*[Deutsche Version](CODE_OF_CONDUCT.de.md)*
+
 ## Our Pledge
 
 We as members, contributors, and leaders pledge to make participation in our
