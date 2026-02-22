@@ -71,6 +71,14 @@ pg-import /Volumes/EOS_DIGITAL
 pg-import /Volumes/EOS_DIGITAL --output /Volumes/PhotoArchive/2026
 ```
 
+### Trip / multi-day import
+
+For a trip or multi-day shoot, run import once with `--trip`: no event or location prompts. Files are placed in one folder per day by EXIF date (e.g. `2026-01-24/`, `2026-01-25/`). Filenames use date and sequence only (e.g. `20260124_001.jpg`) when no event is set. You can still put event and location in `.import.yaml` on the card; they will be used if present.
+
+```bash
+pg-import /Volumes/CARD --trip
+```
+
 ### What happens during import?
 
 1. **Load configuration** (Priority: SD card → .env → CLI)

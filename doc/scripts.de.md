@@ -40,6 +40,7 @@ pg-import <source> [optionen]
 | `--output <dir>` | `-o` | Ziel-Archiv (überschreibt PHOTO_LIBRARY und .import.yaml) |
 | `--dry-run` | `-n` | Vorschau ohne Änderungen |
 | `--no-delete` | | Quelle nicht löschen (auch nicht fragen) |
+| `--trip` | `-t` | Trip-Modus: keine Abfrage für Event/Ort; Dateinamen nur aus Datum+Sequenz, wenn kein Event gesetzt |
 | `--verbose` | `-v` | Detaillierte Ausgabe |
 | `--help` | `-h` | Hilfe anzeigen |
 
@@ -63,6 +64,9 @@ pg-import /Volumes/SD -e "Urlaub" -l "Mallorca" -a "Max"
 
 # In spezifisches Archiv (überschreibt .env und .import.yaml)
 pg-import /Volumes/SD --output /Volumes/Archive/2026 --event "Test"
+
+# Trip-Import (keine Abfragen; dateinamen nur aus Datum, wenn kein Event)
+pg-import /Volumes/CARD --trip
 
 # Vorschau
 pg-import /Volumes/SD --dry-run --verbose

@@ -71,6 +71,14 @@ pg-import /Volumes/EOS_DIGITAL
 pg-import /Volumes/EOS_DIGITAL --output /Volumes/PhotoArchive/2026
 ```
 
+### Trip- / Mehrtage-Import
+
+Bei einer Tour oder einem Mehrtage-Shooting reicht ein Import mit `--trip`: keine Abfrage nach Event oder Ort. Dateien landen nach EXIF-Datum in einem Ordner pro Tag (z.B. `2026-01-24/`, `2026-01-25/`). Ohne gesetztes Event sind die Dateinamen nur aus Datum und Sequenz (z.B. `20260124_001.jpg`). Event und Ort können weiterhin in `.import.yaml` auf der Karte stehen; sie werden genutzt, wenn vorhanden.
+
+```bash
+pg-import /Volumes/CARD --trip
+```
+
 ### Was passiert beim Import?
 
 1. **Konfiguration laden** (Priorität: SD-Karte → .env → CLI)
