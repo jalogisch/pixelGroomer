@@ -277,6 +277,29 @@ develop_imagemagick() {
     fi
 }
 
+# Develop with RawTherapee
+develop_rawtherapee() {
+    local input="$1"
+    local output="$2"
+    
+    local args=(-o "$output" -j"$QUALITY" -Y)
+    [[ -n "$PRESET" ]] && args+=(-p "$PRESET")
+    args+=(-c "$input")
+    
+    local cmd=(rawtherapee-cli "${args[@]}")
+    
+    if [[ "$DRY_RUN" == "true" ]]; then
+        [[ "$VERBOSE" == "true" ]] && log_info "[DRY-RUN] ${cmd[*]}"
+        return 0
+    fi
+    
+    if "${cmd[@]}" &>/dev/null; then
+        return 0
+    else
+        return 1
+    fi
+}
+
 # Main development function
 develop_file() {
     local input="$1"
@@ -289,6 +312,9 @@ develop_file() {
             ;;
         imagemagick)
             develop_imagemagick "$input" "$output"
+            ;;
+        rawtherapee)
+            develop_rawtherapee "$input" "$output"
             ;;
     esac
 }
@@ -304,6 +330,7 @@ main() {
     local processor
     processor=$(detect_processor)
     check_processor "$processor"
+    [[ "$processor" == "rawtherapee" && -z "$PRESET" ]] && PRESET="$RAWTHERAPEE_PRESET"
     
     log_step "PixelGroomer RAW Development"
     log_info "Processor: $processor"
