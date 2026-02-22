@@ -46,8 +46,8 @@ Before the shoot you can prepare a `.import.yaml` on the SD card:
 ```bash
 # Create on SD card: /DCIM/.import.yaml
 cat > /Volumes/EOS_DIGITAL/DCIM/.import.yaml << 'EOF'
-event: "Wedding Meyer"
-location: "Berlin"
+event: "Endurotraining Tag 1"
+location: "Stadtoldendorf"
 tags:
   - wedding
   - outdoor
@@ -62,7 +62,7 @@ This file is automatically detected during import and used as base configuration
 
 ```bash
 # With event as CLI argument (overrides .import.yaml)
-pg-import /Volumes/EOS_DIGITAL --event "Wedding" --location "Berlin"
+pg-import /Volumes/EOS_DIGITAL --event "Endurotraining" --location "Stadtoldendorf"
 
 # Uses .import.yaml or prompts interactively
 pg-import /Volumes/EOS_DIGITAL
@@ -77,7 +77,7 @@ pg-import /Volumes/EOS_DIGITAL --output /Volumes/PhotoArchive/2026
 2. **Scan files** - Find all RAW and JPG files
 3. **Sort by date** - Read EXIF date
 4. **Create folders** - e.g. `2026-01-24/`
-5. **Copy & rename** - e.g. `20260124_Wedding_001.cr3`
+5. **Copy & rename** - e.g. `20260124_Endurotraining_001.cr3`
 6. **Set EXIF tags** - Author, Copyright, Event, Location
 7. **Generate checksums** - For integrity verification
 8. **Optional: Delete source** - After confirmation
@@ -87,9 +87,9 @@ pg-import /Volumes/EOS_DIGITAL --output /Volumes/PhotoArchive/2026
 ```
 PhotoLibrary/
 ├── 2026-01-24/                         # Folder structure: {year}-{month}-{day}
-│   ├── 20260124_Wedding_001.cr3
-│   ├── 20260124_Wedding_002.cr3
-│   ├── 20260124_Wedding_003.jpg
+│   ├── 20260124_Endurotraining_001.cr3
+│   ├── 20260124_Endurotraining_002.cr3
+│   ├── 20260124_Endurotraining_003.jpg
 │   └── .checksums
 ├── 2026-01-25/
 │   └── ...
@@ -105,26 +105,26 @@ After import, you select your best photos and organize them in albums:
 
 ```bash
 # Create album
-pg-album create "Wedding_Highlights"
+pg-album create "Endurotraining_Highlights"
 
 # Add best photos (symlinks, no storage used)
-pg-album add "Wedding_Highlights" \
-    ~/Pictures/PhotoLibrary/2026-01-24/20260124_Wedding_001.cr3 \
-    ~/Pictures/PhotoLibrary/2026-01-24/20260124_Wedding_015.cr3 \
-    ~/Pictures/PhotoLibrary/2026-01-24/20260124_Wedding_042.jpg
+pg-album add "Endurotraining_Highlights" \
+    ~/Pictures/PhotoLibrary/2026-01-24/20260124_Endurotraining_001.cr3 \
+    ~/Pictures/PhotoLibrary/2026-01-24/20260124_Endurotraining_015.cr3 \
+    ~/Pictures/PhotoLibrary/2026-01-24/20260124_Endurotraining_042.jpg
 
 # Or with wildcards
-pg-album add "Wedding_Highlights" ~/Pictures/PhotoLibrary/2026-01-24/*.jpg
+pg-album add "Endurotraining_Highlights" ~/Pictures/PhotoLibrary/2026-01-24/*.jpg
 ```
 
 ### Album structure
 
 ```
 Albums/
-├── Wedding_Highlights/
-│   ├── 20260124_Wedding_001.cr3 -> ../../PhotoLibrary/2026-01-24/...
-│   ├── 20260124_Wedding_015.cr3 -> ...
-│   └── 20260124_Wedding_042.jpg -> ...
+├── Endurotraining_Highlights/
+│   ├── 20260124_Endurotraining_001.cr3 -> ../../PhotoLibrary/2026-01-24/...
+│   ├── 20260124_Endurotraining_015.cr3 -> ...
+│   └── 20260124_Endurotraining_042.jpg -> ...
 └── .albums.json
 ```
 
@@ -141,13 +141,13 @@ Albums/
 pg-album list
 
 # Show album content
-pg-album show "Wedding_Highlights"
+pg-album show "Endurotraining_Highlights"
 
 # Album info (size, count, etc.)
-pg-album info "Wedding_Highlights"
+pg-album info "Endurotraining_Highlights"
 
 # Remove photo from album (original stays)
-pg-album remove "Wedding_Highlights" photo.jpg
+pg-album remove "Endurotraining_Highlights" photo.jpg
 ```
 
 ## Phase 4: RAW Development
@@ -157,7 +157,7 @@ pg-album remove "Wedding_Highlights" photo.jpg
 ```bash
 # Develop all RAWs in a folder
 pg-develop ~/Pictures/PhotoLibrary/2026-01-24/*.cr3 \
-    --output ~/Pictures/Export/Wedding/
+    --output ~/Pictures/Export/Endurotraining/
 
 # With resize for web
 pg-develop ~/Pictures/PhotoLibrary/2026-01-24/*.cr3 \
@@ -166,8 +166,8 @@ pg-develop ~/Pictures/PhotoLibrary/2026-01-24/*.cr3 \
     --quality 85
 
 # Develop album
-pg-album export "Wedding_Highlights" --to /tmp/highlights_raw/
-pg-develop /tmp/highlights_raw/*.cr3 --output ~/Desktop/ForFamily/
+pg-album export "Endurotraining_Highlights" --to /tmp/highlights_raw/
+pg-develop /tmp/highlights_raw/*.cr3 --output ~/Desktop/ForRiders/
 ```
 
 ### Using darktable presets
@@ -202,15 +202,15 @@ pg-develop photo.cr3 --output ./export/
 
 ```bash
 # Export album as real copies (not symlinks)
-pg-album export "Wedding_Highlights" --to ~/Desktop/ForFamily/
+pg-album export "Endurotraining_Highlights" --to ~/Desktop/ForRiders/
 
 # Create JPGs from RAWs
-pg-develop ~/Desktop/ForFamily/*.cr3 \
-    --output ~/Desktop/ForFamily/ \
+pg-develop ~/Desktop/ForRiders/*.cr3 \
+    --output ~/Desktop/ForRiders/ \
     --quality 90
 
 # Remove RAWs, keep only JPGs
-rm ~/Desktop/ForFamily/*.cr3
+rm ~/Desktop/ForRiders/*.cr3
 ```
 
 ### For different platforms
@@ -259,7 +259,7 @@ pg-exif ~/Pictures/PhotoLibrary/2026-01-24/ \
 
 # Add location later
 pg-exif ~/Pictures/PhotoLibrary/2026-01-24/ \
-    --location "Berlin, Germany" \
+    --location "Stadtoldendorf, Germany" \
     --gps "52.52,13.405"
 
 # Show metadata

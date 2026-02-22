@@ -37,11 +37,11 @@ OPTIONS:
     -h, --help                Show this help message
 
 EXAMPLES:
-    pg-album create "Wedding_Highlights"
-    pg-album add "Wedding_Highlights" ~/Photos/2026-01-24/*.jpg
+    pg-album create "Alps_Tour_Highlights"
+    pg-album add "Alps_Tour_Highlights" ~/Photos/2026-01-24/*.jpg
     pg-album list
-    pg-album show "Wedding_Highlights"
-    pg-album export "Wedding_Highlights" --to ~/Desktop/ForFamily/
+    pg-album show "Alps_Tour_Highlights"
+    pg-album export "Alps_Tour_Highlights" --to ~/Desktop/ForRiders/
 
 NOTES:
     - Albums use symlinks to avoid duplicating files

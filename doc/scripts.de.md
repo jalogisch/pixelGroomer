@@ -208,19 +208,19 @@ pg-album <command> [argumente]
 
 ```bash
 # Album erstellen
-pg-album create "Hochzeit_Best"
+pg-album create "Alps_Tour_Highlights"
 
 # Fotos hinzufügen
-pg-album add "Hochzeit_Best" ~/Photos/2026-01-24/*.jpg
+pg-album add "Alps_Tour_Highlights" ~/Photos/2026-01-24/*.jpg
 
 # Album anzeigen
-pg-album show "Hochzeit_Best"
+pg-album show "Alps_Tour_Highlights"
 
 # Album exportieren
-pg-album export "Hochzeit_Best" --to ~/Desktop/ForFamily/
+pg-album export "Alps_Tour_Highlights" --to ~/Desktop/ForRiders/
 
 # Album löschen
-pg-album delete "Hochzeit_Best"
+pg-album delete "Alps_Tour_Highlights"
 ```
 
 ### Hinweise

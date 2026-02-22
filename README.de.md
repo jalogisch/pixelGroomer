@@ -41,7 +41,7 @@ Das Setup-Script:
 ### 1. Fotos importieren
 
 ```bash
-pg-import /Volumes/EOS_DIGITAL --event "Hochzeit" --location "Berlin"
+pg-import /Volumes/EOS_DIGITAL --event "Endurotraining" --location "Stadtoldendorf"
 ```
 
 Fotos werden nach `~/Pictures/PhotoLibrary/2026-01-24/` sortiert und umbenannt.
@@ -49,8 +49,8 @@ Fotos werden nach `~/Pictures/PhotoLibrary/2026-01-24/` sortiert und umbenannt.
 ### 2. Album erstellen
 
 ```bash
-pg-album create "Hochzeit_Highlights"
-pg-album add "Hochzeit_Highlights" ~/Pictures/PhotoLibrary/2026-01-24/*.jpg
+pg-album create "Alps_Tour_Highlights"
+pg-album add "Alps_Tour_Highlights" ~/Pictures/PhotoLibrary/2026-01-24/*.jpg
 ```
 
 ### 3. RAW entwickeln
@@ -62,7 +62,7 @@ pg-develop ~/Pictures/PhotoLibrary/2026-01-24/*.cr3 --output ~/Desktop/jpgs/
 ### 4. Album exportieren
 
 ```bash
-pg-album export "Hochzeit_Highlights" --to ~/Desktop/ForFamily/
+pg-album export "Alps_Tour_Highlights" --to ~/Desktop/ForRiders/
 ```
 
 ## Scripts
@@ -87,8 +87,8 @@ FOLDER_STRUCTURE="{year}-{month}-{day}"
 
 ```yaml
 # .import.yaml auf SD-Karte - Per-Import Einstellungen
-event: "Hochzeit Meyer"
-location: "Berlin"
+event: "Endurotraining Tag 1"
+location: "Stadtoldendorf"
 ```
 
 **Priorität:** CLI-Argumente → Umgebungsvariablen → .env → .import.yaml

@@ -56,7 +56,7 @@ Settings are loaded in this order (later overrides earlier):
 
 ```bash
 # Standard import with event
-pg-import /Volumes/EOS_DIGITAL --event "Wedding"
+pg-import /Volumes/EOS_DIGITAL --event "Endurotraining"
 
 # With location and author
 pg-import /Volumes/SD -e "Vacation" -l "Mallorca" -a "Max"
@@ -108,7 +108,7 @@ pg-rename <path> [options]
 |-------------|-------------|---------|
 | `{date}` | Date from EXIF | `20260124` |
 | `{time}` | Time from EXIF | `143022` |
-| `{event}` | Event name | `Wedding` |
+| `{event}` | Event name | `Endurotraining` |
 | `{seq}` | Sequence number | `1` |
 | `{seq:03d}` | With padding | `001` |
 | `{camera}` | Camera model | `EOS5D` |
@@ -208,19 +208,19 @@ pg-album <command> [arguments]
 
 ```bash
 # Create album
-pg-album create "Wedding_Best"
+pg-album create "Alps_Tour_Highlights"
 
 # Add photos
-pg-album add "Wedding_Best" ~/Photos/2026-01-24/*.jpg
+pg-album add "Alps_Tour_Highlights" ~/Photos/2026-01-24/*.jpg
 
 # Show album
-pg-album show "Wedding_Best"
+pg-album show "Alps_Tour_Highlights"
 
 # Export album
-pg-album export "Wedding_Best" --to ~/Desktop/ForFamily/
+pg-album export "Alps_Tour_Highlights" --to ~/Desktop/ForRiders/
 
 # Delete album
-pg-album delete "Wedding_Best"
+pg-album delete "Alps_Tour_Highlights"
 ```
 
 ### Notes
@@ -331,8 +331,8 @@ Checksums are stored in `.checksums` per directory:
 
 ```
 # .checksums
-a1b2c3d4...  20260124_Wedding_001.cr3
-e5f6g7h8...  20260124_Wedding_002.cr3
+a1b2c3d4...  20260124_Endurotraining_001.cr3
+e5f6g7h8...  20260124_Endurotraining_002.cr3
 ```
 
 ---

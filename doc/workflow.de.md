@@ -47,7 +47,7 @@ Vor dem Shooting kannst du eine `.import.yaml` auf der SD-Karte vorbereiten:
 # Auf SD-Karte erstellen: /DCIM/.import.yaml
 cat > /Volumes/EOS_DIGITAL/DCIM/.import.yaml << 'EOF'
 event: "Hochzeit Meyer"
-location: "Berlin"
+location: "Stadtoldendorf"
 tags:
   - wedding
   - outdoor
@@ -62,7 +62,7 @@ Diese Datei wird beim Import automatisch erkannt und als Basis-Konfiguration ver
 
 ```bash
 # Mit Event als CLI-Argument (überschreibt .import.yaml)
-pg-import /Volumes/EOS_DIGITAL --event "Hochzeit" --location "Berlin"
+pg-import /Volumes/EOS_DIGITAL --event "Endurotraining" --location "Stadtoldendorf"
 
 # Nutzt .import.yaml oder fragt interaktiv
 pg-import /Volumes/EOS_DIGITAL
@@ -105,23 +105,23 @@ Nach dem Import wählst du deine besten Fotos aus und organisierst sie in Alben:
 
 ```bash
 # Album erstellen
-pg-album create "Hochzeit_Highlights"
+pg-album create "Alps_Tour_Highlights"
 
 # Beste Fotos hinzufügen (Symlinks, kein Speicherverbrauch)
-pg-album add "Hochzeit_Highlights" \
+pg-album add "Alps_Tour_Highlights" \
     ~/Pictures/PhotoLibrary/2026-01-24/20260124_Hochzeit_001.cr3 \
     ~/Pictures/PhotoLibrary/2026-01-24/20260124_Hochzeit_015.cr3 \
     ~/Pictures/PhotoLibrary/2026-01-24/20260124_Hochzeit_042.jpg
 
 # Oder mit Wildcards
-pg-album add "Hochzeit_Highlights" ~/Pictures/PhotoLibrary/2026-01-24/*.jpg
+pg-album add "Alps_Tour_Highlights" ~/Pictures/PhotoLibrary/2026-01-24/*.jpg
 ```
 
 ### Album-Struktur
 
 ```
 Albums/
-├── Hochzeit_Highlights/
+├── Alps_Tour_Highlights/
 │   ├── 20260124_Hochzeit_001.cr3 -> ../../PhotoLibrary/2026-01-24/...
 │   ├── 20260124_Hochzeit_015.cr3 -> ...
 │   └── 20260124_Hochzeit_042.jpg -> ...
@@ -141,13 +141,13 @@ Albums/
 pg-album list
 
 # Album-Inhalt anzeigen
-pg-album show "Hochzeit_Highlights"
+pg-album show "Alps_Tour_Highlights"
 
 # Album-Info (Größe, Anzahl, etc.)
-pg-album info "Hochzeit_Highlights"
+pg-album info "Alps_Tour_Highlights"
 
 # Foto aus Album entfernen (Original bleibt)
-pg-album remove "Hochzeit_Highlights" foto.jpg
+pg-album remove "Alps_Tour_Highlights" foto.jpg
 ```
 
 ## Phase 4: RAW-Entwicklung
@@ -166,8 +166,8 @@ pg-develop ~/Pictures/PhotoLibrary/2026-01-24/*.cr3 \
     --quality 85
 
 # Album entwickeln
-pg-album export "Hochzeit_Highlights" --to /tmp/highlights_raw/
-pg-develop /tmp/highlights_raw/*.cr3 --output ~/Desktop/ForFamily/
+pg-album export "Alps_Tour_Highlights" --to /tmp/highlights_raw/
+pg-develop /tmp/highlights_raw/*.cr3 --output ~/Desktop/ForRiders/
 ```
 
 ### Darktable-Presets nutzen
@@ -202,15 +202,15 @@ pg-develop photo.cr3 --output ./export/
 
 ```bash
 # Album als echte Kopien exportieren (nicht Symlinks)
-pg-album export "Hochzeit_Highlights" --to ~/Desktop/ForFamily/
+pg-album export "Alps_Tour_Highlights" --to ~/Desktop/ForRiders/
 
 # JPGs aus RAWs erstellen
-pg-develop ~/Desktop/ForFamily/*.cr3 \
-    --output ~/Desktop/ForFamily/ \
+pg-develop ~/Desktop/ForRiders/*.cr3 \
+    --output ~/Desktop/ForRiders/ \
     --quality 90
 
 # RAWs entfernen, nur JPGs behalten
-rm ~/Desktop/ForFamily/*.cr3
+rm ~/Desktop/ForRiders/*.cr3
 ```
 
 ### Für verschiedene Plattformen
@@ -259,7 +259,7 @@ pg-exif ~/Pictures/PhotoLibrary/2026-01-24/ \
 
 # Location nachträglich hinzufügen
 pg-exif ~/Pictures/PhotoLibrary/2026-01-24/ \
-    --location "Berlin, Germany" \
+    --location "Stadtoldendorf, Germany" \
     --gps "52.52,13.405"
 
 # Metadaten anzeigen

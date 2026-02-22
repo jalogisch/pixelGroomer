@@ -72,7 +72,7 @@ class TestPgImportBasic:
         result = run_script(
             'pg-import',
             str(temp_sd_card),
-            '--event', 'Wedding',
+            '--event', 'Endurotraining',
             '--no-delete'
         )
         

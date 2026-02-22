@@ -59,8 +59,8 @@ OPTIONS:
 
 EXAMPLES:
     pg-exif photo.jpg --show
-    pg-exif ./photos --author "Max" --event "Wedding"
-    pg-exif *.jpg --copyright "© 2026 Max" --location "Berlin"
+    pg-exif ./photos --author "Max" --event "Endurotraining"
+    pg-exif *.jpg --copyright "© 2026 Max" --location "Stadtoldendorf"
     pg-exif photo.jpg --gps "52.52,13.405"
 
 METADATA FIELDS:

@@ -55,7 +55,7 @@ OPTIONS:
     -h, --help            Show this help message
 
 EXAMPLES:
-    pg-import /Volumes/EOS_DIGITAL --event "Wedding" --location "Berlin"
+    pg-import /Volumes/EOS_DIGITAL --event "Endurotraining" --location "Stadtoldendorf"
     pg-import /Volumes/EOS_DIGITAL    # Uses .import.yaml or prompts
     pg-import ./photos --dry-run      # Preview import
 

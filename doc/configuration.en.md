@@ -54,10 +54,10 @@ Settings are loaded in this order (later overrides earlier):
 ```bash
 # .import.yaml on SD card has: event="Test"
 # .env has: DEFAULT_AUTHOR="Max"
-# CLI: pg-import /sd --event "Wedding"
+# CLI: pg-import /sd --event "Endurotraining"
 
 # Result:
-# - Event: "Wedding" (CLI wins)
+# - Event: "Endurotraining" (CLI wins)
 # - Author: "Max" (.env, no CLI override)
 ```
 
@@ -118,9 +118,9 @@ DEFAULT_COPYRIGHT="© 2026 Max Mustermann"
 NAMING_PATTERN="{date}_{event}_{seq:03d}"
 
 # Examples:
-# {date}_{event}_{seq:03d}     → 20260124_Wedding_001.jpg
+# {date}_{event}_{seq:03d}     → 20260124_Endurotraining_001.jpg
 # {date}_{time}_{seq:03d}      → 20260124_143022_001.jpg
-# {event}_{date}_{seq:03d}     → Wedding_20260124_001.jpg
+# {event}_{date}_{seq:03d}     → Endurotraining_20260124_001.jpg
 ```
 
 ### RAW Development
@@ -191,10 +191,10 @@ Place this file on the SD card:
 
 ```yaml
 # Event name (used for filename and EXIF)
-event: "Wedding Meyer"
+event: "Endurotraining Tag 1"
 
 # Location for EXIF metadata
-location: "Berlin, Germany"
+location: "Stadtoldendorf, Germany"
 
 # Override author (optional)
 # Will be overridden by .env DEFAULT_AUTHOR!
@@ -264,7 +264,7 @@ Options:
 
 ```bash
 # Override event and location
-pg-import /Volumes/SD --event "Birthday" --location "Munich"
+pg-import /Volumes/SD --event "Alps Tour" --location "Sölk Pass"
 
 # Import to specific archive
 pg-import /Volumes/SD --output /Volumes/Backup/Photos
@@ -330,8 +330,8 @@ PROMPT_ARCHIVE_DIR="false"
 ### Typical .import.yaml
 
 ```yaml
-event: "Wedding Meyer"
-location: "Berlin"
+event: "Endurotraining Tag 1"
+location: "Stadtoldendorf"
 tags:
   - wedding
   - family

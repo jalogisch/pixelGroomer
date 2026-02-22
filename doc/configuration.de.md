@@ -194,7 +194,7 @@ Lege diese Datei auf der SD-Karte ab:
 event: "Hochzeit Meyer"
 
 # Ort für EXIF-Metadaten
-location: "Berlin, Germany"
+location: "Stadtoldendorf, Germany"
 
 # Author überschreiben (optional)
 # Wird von .env DEFAULT_AUTHOR überschrieben!
@@ -329,7 +329,7 @@ PROMPT_ARCHIVE_DIR="false"
 
 ```yaml
 event: "Hochzeit Meyer"
-location: "Berlin"
+location: "Stadtoldendorf"
 tags:
   - wedding
   - family
