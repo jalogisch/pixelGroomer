@@ -192,14 +192,14 @@ load_import_config() {
         ARCHIVE_DIR=$(prompt_input "Archive directory" "$ARCHIVE_DIR" "ARCHIVE_DIR")
     fi
     
-    # Prompt for event if still missing
-    if [[ -z "$EVENT" ]]; then
+    # Prompt for event if still missing (skip in trip mode)
+    if [[ "$TRIP_MODE" != "true" && -z "$EVENT" ]]; then
         log_info "No event name specified"
         EVENT=$(prompt_input "Enter event name" "" "EVENT")
     fi
     
-    # Prompt for location (optional)
-    if [[ -z "$LOCATION" ]]; then
+    # Prompt for location (optional) — skip in trip mode
+    if [[ "$TRIP_MODE" != "true" && -z "$LOCATION" ]]; then
         LOCATION=$(prompt_input "Enter location (optional, press Enter to skip)" "" "LOCATION")
     fi
     
