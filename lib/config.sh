@@ -65,6 +65,7 @@ load_config
 : "${RAW_PROCESSOR:=darktable}"
 : "${JPEG_QUALITY:=92}"
 : "${DARKTABLE_STYLE:=}"
+: "${RAWTHERAPEE_PRESET:=}"
 : "${RAW_EXTENSIONS:=cr2,cr3,nef,arw,raf,dng,orf,rw2}"
 : "${IMAGE_EXTENSIONS:=jpg,jpeg,png,tiff,tif,heic,heif}"
 : "${CONFIRM_DELETE:=true}"
