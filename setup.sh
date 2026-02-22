@@ -73,6 +73,7 @@ fi
 
 # Activate and install dependencies
 log_info "Installing Python dependencies..."
+# shellcheck disable=SC1090  # VENV_DIR is set at runtime
 source "${VENV_DIR}/bin/activate"
 
 pip install --upgrade pip --quiet

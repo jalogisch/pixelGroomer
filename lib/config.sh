@@ -13,6 +13,7 @@ set -euo pipefail
 PIXELGROOMER_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 # Load venv helper
+# shellcheck disable=SC1090  # Dynamic path from PIXELGROOMER_ROOT
 source "${PIXELGROOMER_ROOT}/lib/venv.sh"
 
 # Track which variables were set by the caller (before we do anything)
