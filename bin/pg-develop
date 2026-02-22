@@ -232,10 +232,6 @@ develop_darktable() {
     
     # Run darktable-cli
     if "${cmd[@]}" &>/dev/null; then
-        # Apply resize if needed (darktable doesn't have built-in resize in CLI)
-        if [[ -n "$RESIZE" && -f "$output" ]]; then
-            convert "$output" -resize "$RESIZE" -quality "$QUALITY" "$output"
-        fi
         return 0
     else
         return 1
@@ -304,6 +300,9 @@ main() {
     log_info "Quality: $QUALITY"
     [[ -n "$PRESET" ]] && log_info "Preset: $PRESET"
     [[ -n "$RESIZE" ]] && log_info "Resize: $RESIZE"
+    if [[ -n "$RESIZE" && "$processor" != "imagemagick" ]]; then
+        log_warn "Resize is not applied when using $processor (only with ImageMagick processor)"
+    fi
     
     if [[ "$DRY_RUN" == "true" ]]; then
         log_warn "DRY-RUN MODE - No files will be created"
