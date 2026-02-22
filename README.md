@@ -14,14 +14,14 @@ Modular CLI toolset for automating photo workflows.
 - Import from SD cards with automatic sorting and renaming
 - EXIF/IPTC/XMP metadata management
 - Album management with symlinks (saves disk space)
-- RAW development to JPG (darktable-cli or ImageMagick)
+- RAW development to JPG (darktable-cli, ImageMagick, or RawTherapee)
 - Integrity verification with checksums
 
 ## Installation
 
 ```bash
 # 1. External dependencies (macOS)
-brew install exiftool python3 darktable imagemagick
+brew install exiftool python3 darktable imagemagick rawtherapee
 
 # 2. Run setup (creates venv, installs Python deps)
 ./setup.sh
@@ -33,7 +33,9 @@ echo 'export PATH="$PATH:'$(pwd)'/bin"' >> ~/.zshrc
 The setup script:
 - Creates a Python virtual environment (`.venv/`)
 - Installs Python dependencies
-- Checks external tools (exiftool, darktable, etc.)
+- Checks external tools (exiftool, darktable, rawtherapee, etc.)
+
+**Note for macOS:** The darktable formula may be deprecated or removed from Homebrew. You can use `brew install --cask darktable`, install from [darktable.org](https://www.darktable.org/), or use ImageMagick or RawTherapee with `pg-develop` instead.
 - Creates `.env` from template
 
 ## Quickstart
@@ -99,6 +101,7 @@ location: "Stadtoldendorf"
 - [Configuration](doc/configuration.en.md) - All settings explained
 - [Script Reference](doc/scripts.en.md) - Detailed options for all scripts
 - [Examples](doc/examples.en.md) - Complete workflow examples
+- [RawTherapee preset research](doc/preset-research.en.md) - Why we don't ship a Kodak-style preset; where to get one
 
 German documentation:
 - [Workflow (DE)](doc/workflow.de.md)

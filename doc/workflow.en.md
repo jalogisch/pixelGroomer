@@ -10,11 +10,13 @@ Before first use, you need to run the setup:
 
 ```bash
 # Install external tools (macOS)
-brew install exiftool python3 darktable imagemagick
+brew install exiftool python3 darktable imagemagick rawtherapee
 
 # Run setup (creates venv, .env, etc.)
 ./setup.sh
 ```
+
+On macOS, the darktable formula may be deprecated or removed from Homebrew; use `brew install --cask darktable`, install from [darktable.org](https://www.darktable.org/), or use ImageMagick or RawTherapee with `pg-develop` instead.
 
 The setup:
 - Creates a Python virtual environment (`.venv/`)

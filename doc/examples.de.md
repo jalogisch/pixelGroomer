@@ -12,8 +12,8 @@ Dieses Dokument zeigt, wie PixelGroomer-Tools zu vollständigen Workflows kombin
 | `daily-offload.sh` | Einfacher täglicher SD-Karten-Import für mehrtägige Events |
 | `develop-album.sh` | RAW-Dateien mit einheitlichem darktable-Preset entwickeln |
 | `album-export.sh` | Album-Export mit Lizenz-Metadaten und Wasserzeichen |
-| `enduro-workflow.sh` | Kompletter Workflow mit Entwicklung und Web-Export |
 | `adventure-camp-workflow.sh` | Wochenend-Event-Import + RawTherapee-Entwicklung (Adventure Camp, Stadtoldendorf) |
+| `enduro-workflow.sh` | Kompletter Workflow mit Entwicklung und Web-Export |
 
 ---
 
@@ -28,21 +28,6 @@ Das Script `examples/holiday-import.sh` importiert alle Fotos von einer SD-Karte
 ```
 
 Siehe [Workflow: Urlaubs-Import (SD-Karte)](workflow.de.md#urlaubs-import-sd-karte).
-
----
-
-## Adventure Camp Workflow
-
-Das Script `examples/adventure-camp-workflow.sh` führt Import (Event "Adventure Camp", Ort "Stadtoldendorf") und anschließend RAW-Entwicklung mit RawTherapee und einem Kodak-Preset aus. Ideal für ein zweitägiges Wochenend-Event.
-
-### Verwendung
-
-```bash
-./examples/adventure-camp-workflow.sh /Volumes/CARD [--output DIR] [--preset PATH] [--dry-run]
-./examples/adventure-camp-workflow.sh --skip-import ~/Pictures/PhotoLibrary/2026-02-22 --output ~/Desktop/Developed
-```
-
-Ein Kodak-PP3 kann in `templates/rawtherapee-kodak-portra.pp3` mitgeliefert werden; sonst `RAWTHERAPEE_PRESET` in .env setzen oder `--preset` angeben. PP3 aus der Community nutzen oder in RawTherapee anlegen (RawPedia Film Simulation = HaldCLUT in der GUI; CLI braucht eine .pp3-Datei). Kodak-Portra-PP3s von [TheSquirrelMafia/RawTherapee-PP3-Settings](https://github.com/TheSquirrelMafia/RawTherapee-PP3-Settings) laden (z. B. *TSM - Film Simulations / Color Films*). Das Projekt liefert kein Preset mit (kein permissiv lizenziertes PP3 gefunden); siehe [RawTherapee-Preset-Recherche](preset-research.de.md). [Workflow: Wochenend-Event mit RawTherapee](workflow.de.md#wochenend-event-mit-rawtherapee-adventure-camp).
 
 ---
 
@@ -283,6 +268,21 @@ pg-album add "GS_Treffen_Best" ~/Pictures/PhotoLibrary/2026-07-10/*.cr3
 # 2. Zum Teilen exportieren
 ./examples/album-export.sh "GS_Treffen_Best" --output ~/Desktop/FuerTeilnehmer
 ```
+
+---
+
+## Adventure Camp Workflow
+
+Das Script `examples/adventure-camp-workflow.sh` führt Import (Event "Adventure Camp", Ort "Stadtoldendorf") und anschließend RAW-Entwicklung mit RawTherapee und einem Kodak-Preset aus. Ideal für ein zweitägiges Wochenend-Event.
+
+### Verwendung
+
+```bash
+./examples/adventure-camp-workflow.sh /Volumes/CARD [--output DIR] [--preset PATH] [--dry-run]
+./examples/adventure-camp-workflow.sh --skip-import ~/Pictures/PhotoLibrary/2026-02-22 --output ~/Desktop/Developed
+```
+
+Ein Kodak-PP3 kann in `templates/rawtherapee-kodak-portra.pp3` mitgeliefert werden; sonst `RAWTHERAPEE_PRESET` in .env setzen oder `--preset` angeben. PP3 aus der Community nutzen oder in RawTherapee anlegen (RawPedia Film Simulation = HaldCLUT in der GUI; CLI braucht eine .pp3-Datei). Kodak-Portra-PP3s von [TheSquirrelMafia/RawTherapee-PP3-Settings](https://github.com/TheSquirrelMafia/RawTherapee-PP3-Settings) laden (z. B. *TSM - Film Simulations / Color Films*). Das Projekt liefert kein Preset mit (kein permissiv lizenziertes PP3 gefunden); siehe [RawTherapee-Preset-Recherche](preset-research.de.md). [Workflow: Wochenend-Event mit RawTherapee](workflow.de.md#wochenend-event-mit-rawtherapee-adventure-camp).
 
 ---
 

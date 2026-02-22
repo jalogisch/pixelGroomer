@@ -14,14 +14,14 @@ Modulares CLI-Toolset zur Automatisierung des Foto-Workflows.
 - Import von SD-Karten mit automatischer Sortierung und Umbenennung
 - EXIF/IPTC/XMP Metadaten-Management
 - Album-Verwaltung mit Symlinks (spart Speicherplatz)
-- RAW-Entwicklung zu JPG (darktable-cli oder ImageMagick)
+- RAW-Entwicklung zu JPG (darktable-cli, ImageMagick oder RawTherapee)
 - Integritätsprüfung mit Checksums
 
 ## Installation
 
 ```bash
 # 1. Externe Abhängigkeiten (macOS)
-brew install exiftool python3 darktable imagemagick
+brew install exiftool python3 darktable imagemagick rawtherapee
 
 # 2. Setup ausführen (erstellt venv, installiert Python-Deps)
 ./setup.sh
@@ -33,7 +33,9 @@ echo 'export PATH="$PATH:'$(pwd)'/bin"' >> ~/.zshrc
 Das Setup-Script:
 - Erstellt ein Python virtual environment (`.venv/`)
 - Installiert Python-Abhängigkeiten
-- Prüft externe Tools (exiftool, darktable, etc.)
+- Prüft externe Tools (exiftool, darktable, rawtherapee, etc.)
+
+**Hinweis für macOS:** Die darktable-Formel kann in Homebrew eingestellt werden. Du kannst `brew install --cask darktable` nutzen, von [darktable.org](https://www.darktable.org/) installieren oder ImageMagick bzw. RawTherapee mit `pg-develop` verwenden.
 - Erstellt `.env` aus Template
 
 ## Quickstart
@@ -99,12 +101,14 @@ location: "Stadtoldendorf"
 - [Konfiguration](doc/configuration.de.md) - Alle Einstellungen erklärt
 - [Script-Referenz](doc/scripts.de.md) - Detaillierte Optionen aller Scripts
 - [Beispiele](doc/examples.de.md) - Vollständige Workflow-Beispiele
+- [RawTherapee-Preset-Recherche](doc/preset-research.de.md) - Warum wir kein Kodak-Preset mitliefern; wo du eines bekommst
 
 Englische Dokumentation:
 - [Workflow (EN)](doc/workflow.en.md)
 - [Configuration (EN)](doc/configuration.en.md)
 - [Script Reference (EN)](doc/scripts.en.md)
 - [Examples (EN)](doc/examples.en.md)
+- [RawTherapee preset research (EN)](doc/preset-research.en.md)
 
 ## Tests
 
