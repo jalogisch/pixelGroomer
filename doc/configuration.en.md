@@ -126,7 +126,7 @@ NAMING_PATTERN="{date}_{event}_{seq:03d}"
 ### RAW Development
 
 ```bash
-# Preferred processor: darktable or imagemagick
+# Preferred processor: darktable, imagemagick, or rawtherapee
 RAW_PROCESSOR="darktable"
 
 # JPEG quality (1-100)
@@ -134,7 +134,12 @@ JPEG_QUALITY=92
 
 # Default darktable preset (empty = none)
 DARKTABLE_STYLE=""
+
+# Default RawTherapee PP3 preset path (empty = none)
+RAWTHERAPEE_PRESET=""
 ```
+
+Resize (`--resize`) is only applied when using the ImageMagick processor; darktable and RawTherapee output is not resized so the developed look is preserved.
 
 ### Supported Formats
 
