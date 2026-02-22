@@ -43,7 +43,7 @@ OPTIONS:
     -o, --output <dir>    Output directory (default: same as source or EXPORT_DIR)
     -p, --preset <name>   Darktable style/preset name
     -q, --quality <1-100> JPEG quality (default: $JPEG_QUALITY)
-    --processor <name>    Force processor: darktable or imagemagick
+    --processor <name>    Force processor: darktable, imagemagick, or rawtherapee
     --resize <WxH>        Resize output (e.g., 1920x1080, 1920x, x1080)
     --overwrite           Overwrite existing files
     -n, --dry-run         Preview without processing
@@ -53,16 +53,21 @@ OPTIONS:
 PROCESSORS:
     darktable     High-quality RAW processing, supports XMP sidecars and presets
     imagemagick   Faster but simpler processing, uses dcraw internally
+    rawtherapee   PP3 presets, film simulation; use --preset path/to.pp3
 
 EXAMPLES:
     pg-develop photo.cr3
     pg-develop ./raw_photos --output ./jpgs --preset "vivid"
     pg-develop *.cr3 --processor darktable --quality 95
     pg-develop ./photos --resize 1920x --output ./web
+    pg-develop *.cr3 --processor rawtherapee --preset ~/presets/kodak.pp3
 
 PRESETS (darktable):
     Presets/styles should be installed in darktable first.
     List available styles: darktable-cli --help
+
+PRESETS (rawtherapee):
+    Use --preset with path to a .pp3 file. Set RAWTHERAPEE_PRESET in .env for default.
 
 XMP SIDECARS:
     If a .xmp sidecar file exists next to the RAW file, darktable will
