@@ -253,8 +253,8 @@ pg-develop <files...> [optionen]
 | `--output <dir>` | `-o` | Ausgabeverzeichnis |
 | `--preset <name>` | `-p` | Darktable-Preset |
 | `--quality <1-100>` | `-q` | JPEG-Qualität |
-| `--processor <name>` | | `darktable` oder `imagemagick` |
-| `--resize <WxH>` | | Größe ändern (z.B. `1920x`, `x1080`) |
+| `--processor <name>` | | `darktable`, `imagemagick` oder `rawtherapee` |
+| `--resize <WxH>` | | Größe ändern (z.B. `1920x`, `x1080`); nur bei ImageMagick |
 | `--overwrite` | | Existierende überschreiben |
 | `--dry-run` | `-n` | Vorschau |
 
@@ -275,6 +275,9 @@ pg-develop photo.cr3 --preset "vivid"
 
 # ImageMagick erzwingen
 pg-develop photo.cr3 --processor imagemagick
+
+# RawTherapee mit PP3-Preset
+pg-develop photo.cr3 --processor rawtherapee --preset ~/presets/kodak.pp3
 ```
 
 ### XMP-Sidecars
@@ -343,7 +346,7 @@ e5f6g7h8...  20260124_Hochzeit_002.cr3
 
 ## pg-test-processors
 
-Vergleicht RAW-Prozessoren (darktable vs ImageMagick).
+Vergleicht RAW-Prozessoren (darktable, ImageMagick und RawTherapee bei Installation).
 
 ### Syntax
 
@@ -359,11 +362,12 @@ pg-test-processors photo.cr3
 
 ### Output
 
-Erstellt zwei Dateien zum Vergleich:
+Erstellt bis zu drei Dateien zum Vergleich (je nach Installation):
 - `photo_darktable.jpg`
 - `photo_imagemagick.jpg`
+- `photo_rawtherapee.jpg`
 
-Zeigt Verarbeitungszeit und Dateigröße für beide.
+Zeigt Verarbeitungszeit und Dateigröße für jeden.
 
 ---
 
@@ -382,7 +386,7 @@ Richtet die Entwicklungsumgebung ein.
 1. Prüft Python 3 und venv-Modul
 2. Erstellt `.venv/` virtual environment
 3. Installiert Python-Abhängigkeiten aus `requirements.txt`
-4. Prüft externe Tools (exiftool, darktable, imagemagick)
+4. Prüft externe Tools (exiftool, darktable, imagemagick, rawtherapee)
 5. Erstellt `.env` aus `.env.example` (falls nicht vorhanden)
 6. Macht Scripts ausführbar
 
