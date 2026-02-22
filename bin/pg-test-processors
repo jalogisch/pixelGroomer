@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # PixelGroomer - RAW Processor Comparison Test
-# Compares darktable-cli and ImageMagick for RAW development
+# Compares darktable-cli, ImageMagick, and RawTherapee for RAW development
 
 set -euo pipefail
 
@@ -23,17 +23,18 @@ USAGE:
     pg-test-processors <raw-file>
 
 DESCRIPTION:
-    Develops the same RAW file with both darktable-cli and ImageMagick,
-    then compares file size, processing time, and opens both for visual
-    comparison.
+    Develops the same RAW file with darktable-cli, ImageMagick, and
+    RawTherapee (when available), then compares file size, processing
+    time, and opens outputs for visual comparison.
 
 EXAMPLE:
     pg-test-processors photo.cr3
 
 OUTPUT:
-    Creates two files in the same directory:
+    Creates up to three files in the same directory:
     - <filename>_darktable.jpg
     - <filename>_imagemagick.jpg
+    - <filename>_rawtherapee.jpg
 
 EOF
 }
@@ -66,6 +67,7 @@ main() {
     
     local dt_output="${dir}/${basename}_darktable.jpg"
     local im_output="${dir}/${basename}_imagemagick.jpg"
+    local rt_output="${dir}/${basename}_rawtherapee.jpg"
     
     log_step "RAW Processor Comparison Test"
     log_info "Input: $raw_file"
@@ -74,6 +76,7 @@ main() {
     # Check available processors
     local has_darktable=false
     local has_imagemagick=false
+    local has_rawtherapee=false
     
     if command -v darktable-cli &>/dev/null; then
         has_darktable=true
@@ -89,11 +92,18 @@ main() {
         log_warn "ImageMagick: Not installed"
     fi
     
+    if command -v rawtherapee-cli &>/dev/null; then
+        has_rawtherapee=true
+        log_success "rawtherapee-cli: Available"
+    else
+        log_warn "rawtherapee-cli: Not installed"
+    fi
+    
     echo ""
     
-    if [[ "$has_darktable" == "false" && "$has_imagemagick" == "false" ]]; then
+    if [[ "$has_darktable" == "false" && "$has_imagemagick" == "false" && "$has_rawtherapee" == "false" ]]; then
         log_error "No RAW processors available"
-        log_info "Install with: brew install darktable imagemagick"
+        log_info "Install with: brew install darktable imagemagick rawtherapee"
         exit 1
     fi
     
@@ -147,6 +157,31 @@ main() {
         fi
     fi
     
+    # Test RawTherapee
+    if [[ "$has_rawtherapee" == "true" ]]; then
+        log_step "Testing RawTherapee..."
+        
+        local rt_start rt_end rt_time
+        rt_start=$(date +%s.%N)
+        
+        if rawtherapee-cli -o "$rt_output" -j"${JPEG_QUALITY:-92}" -Y -c "$raw_file" &>/dev/null; then
+            rt_end=$(date +%s.%N)
+            rt_time=$(echo "$rt_end - $rt_start" | bc)
+            
+            local rt_size
+            if [[ "$(uname)" == "Darwin" ]]; then
+                rt_size=$(stat -f "%z" "$rt_output")
+            else
+                rt_size=$(stat --printf="%s" "$rt_output")
+            fi
+            rt_size_mb=$(echo "scale=2; $rt_size / 1048576" | bc)
+            
+            log_success "RawTherapee: ${rt_time}s, ${rt_size_mb} MB"
+        else
+            log_error "RawTherapee failed"
+        fi
+    fi
+    
     echo ""
     log_step "Results"
     echo ""
@@ -163,18 +198,24 @@ main() {
         printf "%-15s %-12s %-12s\n" "ImageMagick" "${im_time}s" "${im_size_mb} MB"
     fi
     
+    if [[ -f "$rt_output" ]]; then
+        printf "%-15s %-12s %-12s\n" "RawTherapee" "${rt_time}s" "${rt_size_mb} MB"
+    fi
+    
     echo ""
     log_info "Output files:"
     [[ -f "$dt_output" ]] && echo "  - $dt_output"
     [[ -f "$im_output" ]] && echo "  - $im_output"
+    [[ -f "$rt_output" ]] && echo "  - $rt_output"
     
     echo ""
     
     # Offer to open for comparison
     if [[ "$(uname)" == "Darwin" ]]; then
-        if confirm "Open both images for visual comparison?" "y"; then
+        if confirm "Open images for visual comparison?" "y"; then
             [[ -f "$dt_output" ]] && open "$dt_output"
             [[ -f "$im_output" ]] && open "$im_output"
+            [[ -f "$rt_output" ]] && open "$rt_output"
         fi
     else
         log_info "Open the output files in your image viewer to compare quality."
@@ -182,7 +223,7 @@ main() {
     
     echo ""
     log_info "To set your preferred processor, edit .env:"
-    echo "  RAW_PROCESSOR=\"darktable\"   # or \"imagemagick\""
+    echo "  RAW_PROCESSOR=\"darktable\"   # or \"imagemagick\" or \"rawtherapee\""
 }
 
 main "$@"
