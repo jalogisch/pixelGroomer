@@ -157,6 +157,41 @@ class TestPgImportWithYaml:
         for f in imported_files:
             assert 'CLIOverride' in f.name
 
+    @requires_exiftool
+    @requires_pillow
+    def test_identity_yaml_sets_artist_copyright_credit(self, run_script, tmp_path: Path, test_env):
+        """pg-import with .import.yaml (author, copyright, credit only) sets Artist, Copyright, IPTC:Credit."""
+        sd_root = tmp_path / 'SD_IDENTITY'
+        sd_root.mkdir()
+        create_sd_card_structure(sd_root, num_photos=2)
+        create_import_yaml(
+            sd_root,
+            author='IdentityAuthor',
+            copyright='© 2026 Unlicense',
+            credit='IdentityCredit',
+        )
+
+        archive_dir = test_env['PHOTO_LIBRARY']
+
+        result = run_script(
+            'pg-import',
+            str(sd_root),
+            '--trip',
+            '--no-delete',
+            env=test_env,
+        )
+
+        assert result.returncode == 0
+
+        archive_path = Path(archive_dir)
+        imported = list(archive_path.rglob('*.jpg')) + list(archive_path.rglob('*.JPG'))
+        assert len(imported) > 0
+
+        sample = imported[0]
+        assert get_exif(sample, 'Artist') == 'IdentityAuthor'
+        assert get_exif(sample, 'Copyright') == '© 2026 Unlicense'
+        assert get_exif(sample, 'IPTC:Credit') == 'IdentityCredit'
+
 
 class TestPgImportDryRun:
     """Tests for pg-import --dry-run mode."""
