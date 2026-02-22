@@ -200,10 +200,18 @@ location: "Stadtoldendorf, Germany"
 # Wird von .env DEFAULT_AUTHOR überschrieben!
 author: "Max Mustermann"
 
+# Copyright-Hinweis (optional; Fallback: .env DEFAULT_COPYRIGHT)
+copyright: "© 2026 Dein Name. Released under the Unlicense (https://unlicense.org)"
+
+# Credit-Zeile / Künstlername (optional; IPTC:Credit)
+credit: "Dein Name"
+
 # Ziel-Archiv für diesen Import (optional)
 # Wird von .env PHOTO_LIBRARY überschrieben!
 archive: "/Volumes/PhotoArchive/2026"
 ```
+
+Eine minimale Vorlage nur mit author, copyright und credit liegt in `templates/.import.yaml.identity`; kopiere sie auf jede Karte als `DCIM/.import.yaml` und passe sie an.
 
 **Wichtig:** Werte in `.import.yaml` haben die niedrigste Priorität. Sie werden von `.env` und CLI-Argumenten überschrieben. Die Datei eignet sich gut für Event-spezifische Defaults, die bei Bedarf überschrieben werden können.
 

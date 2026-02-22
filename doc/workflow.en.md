@@ -79,6 +79,10 @@ For a trip or multi-day shoot, run import once with `--trip`: no event or locati
 pg-import /Volumes/CARD --trip
 ```
 
+### Identity file for all cards
+
+Copy `templates/.import.yaml.identity` to each SD card as `DCIM/.import.yaml`. It sets author, copyright (e.g. Unlicense), and credit (artist name). Leave event and location unset for trip import.
+
 ### What happens during import?
 
 1. **Load configuration** (Priority: SD card → .env → CLI)

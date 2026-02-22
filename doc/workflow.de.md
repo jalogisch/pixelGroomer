@@ -79,6 +79,10 @@ Bei einer Tour oder einem Mehrtage-Shooting reicht ein Import mit `--trip`: kein
 pg-import /Volumes/CARD --trip
 ```
 
+### Identitätsdatei für alle Karten
+
+Kopiere `templates/.import.yaml.identity` auf jede SD-Karte als `DCIM/.import.yaml`. Sie setzt Author, Copyright (z.B. Unlicense) und Credit (Künstlername). Event und Ort für Trip-Import ungesetzt lassen.
+
 ### Was passiert beim Import?
 
 1. **Konfiguration laden** (Priorität: SD-Karte → .env → CLI)

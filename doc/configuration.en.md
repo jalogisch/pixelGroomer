@@ -200,10 +200,18 @@ location: "Stadtoldendorf, Germany"
 # Will be overridden by .env DEFAULT_AUTHOR!
 author: "Max Mustermann"
 
+# Copyright notice (optional; falls back to .env DEFAULT_COPYRIGHT)
+copyright: "© 2026 Your Name. Released under the Unlicense (https://unlicense.org)"
+
+# Credit line / artist name (optional; IPTC:Credit)
+credit: "Your Name"
+
 # Target archive for this import (optional)
 # Will be overridden by .env PHOTO_LIBRARY!
 archive: "/Volumes/PhotoArchive/2026"
 ```
+
+A minimal template with only author, copyright, and credit is in `templates/.import.yaml.identity`; copy it to each card as `DCIM/.import.yaml` and edit as needed.
 
 **Important:** Values in `.import.yaml` have the lowest priority. They are overridden by `.env` and CLI arguments. The file is good for event-specific defaults that can be overridden when needed.
 
