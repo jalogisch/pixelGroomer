@@ -1,0 +1,5 @@
+# Copy to SD card as DCIM/.import.yaml; edit author, copyright, credit; leave event/location unset for trip import.
+
+author: "Your Name"
+copyright: "© 2026 Your Name. Released under the Unlicense (https://unlicense.org)"
+credit: "Your Name"
