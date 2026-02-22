@@ -146,7 +146,7 @@ parse_args() {
 # Load configuration with priority: SD-Card YAML < .env < CLI
 load_import_config() {
     # --- Layer 1: Load from .import.yaml on SD card (lowest priority) ---
-    local yaml_event="" yaml_location="" yaml_author="" yaml_archive=""
+    local yaml_event="" yaml_location="" yaml_author="" yaml_archive="" yaml_copyright="" yaml_credit=""
     
     local yaml_config
     if yaml_config=$(load_import_yaml "$SOURCE_DIR" 2>/dev/null); then
@@ -158,6 +158,8 @@ load_import_config() {
                 location) yaml_location="$value" ;;
                 author) yaml_author="$value" ;;
                 archive|output) yaml_archive="$value" ;;
+                copyright) yaml_copyright="$value" ;;
+                credit) yaml_credit="$value" ;;
             esac
         done <<< "$yaml_config"
     fi
@@ -183,6 +185,11 @@ load_import_config() {
     # Archive directory: YAML -> .env PHOTO_LIBRARY -> CLI
     ARCHIVE_DIR="${yaml_archive:-$PHOTO_LIBRARY}"
     [[ -n "$CLI_ARCHIVE" ]] && ARCHIVE_DIR="$CLI_ARCHIVE"
+    
+    # Copyright: YAML -> .env DEFAULT_COPYRIGHT (no CLI in this plan)
+    COPYRIGHT="${yaml_copyright:-$DEFAULT_COPYRIGHT}"
+    # Credit: YAML only (no .env default)
+    CREDIT="${yaml_credit}"
     
     # --- Layer 4: Interactive prompts for missing values ---
     
@@ -443,7 +450,8 @@ apply_metadata() {
     
     local exif_args=()
     [[ -n "$AUTHOR" ]] && exif_args+=(--author "$AUTHOR")
-    [[ -n "$DEFAULT_COPYRIGHT" ]] && exif_args+=(--copyright "$DEFAULT_COPYRIGHT")
+    [[ -n "$COPYRIGHT" ]] && exif_args+=(--copyright "$COPYRIGHT")
+    [[ -n "$CREDIT" ]] && exif_args+=(--credit "$CREDIT")
     [[ -n "$EVENT" ]] && exif_args+=(--event "$EVENT")
     [[ -n "$LOCATION" ]] && exif_args+=(--location "$LOCATION")
     
