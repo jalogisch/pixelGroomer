@@ -90,6 +90,17 @@ class TestPgImportBasic:
             assert 'Endurotraining' in f.name
 
 
+class TestPgImportSplitByType:
+    """Tests for pg-import --split-by-type (raw/ and jpg/ subfolders with paired names)."""
+
+    def test_import_help_includes_split_by_type(self, run_script):
+        """pg-import --help mentions --split-by-type."""
+        result = run_script('pg-import', '--help')
+        assert result.returncode == 0
+        output = result.stdout + result.stderr
+        assert '--split-by-type' in output
+
+
 class TestPgImportWithEvent:
     """Tests for pg-import with --event flag."""
     
