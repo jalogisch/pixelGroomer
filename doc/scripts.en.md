@@ -40,6 +40,7 @@ pg-import <source> [options]
 | `--output <dir>` | `-o` | Target archive (overrides PHOTO_LIBRARY and .import.yaml) |
 | `--dry-run` | `-n` | Preview without changes |
 | `--no-delete` | | Don't delete source (don't even ask) |
+| `--split-by-type` | | Put RAW in `raw/`, JPG in `jpg/` subfolders with paired names |
 | `--trip` | `-t` | Trip mode: skip event/location prompts; date-only filenames when event not set |
 | `--verbose` | `-v` | Detailed output |
 | `--help` | `-h` | Show help |
@@ -67,6 +68,9 @@ pg-import /Volumes/SD --output /Volumes/Archive/2026 --event "Test"
 
 # Trip import (no prompts; date-only names when no event)
 pg-import /Volumes/CARD --trip
+
+# RAW and JPG in raw/ and jpg/ subfolders with paired names
+pg-import /Volumes/CARD --split-by-type --event "Endurotraining"
 
 # Preview
 pg-import /Volumes/SD --dry-run --verbose

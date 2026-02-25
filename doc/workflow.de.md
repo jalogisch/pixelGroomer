@@ -121,6 +121,14 @@ PhotoLibrary/
 
 Die Ordnerstruktur ist über `FOLDER_STRUCTURE` in `.env` konfigurierbar (siehe [Konfiguration](configuration.md)).
 
+### Import mit RAW und JPG in getrennten Ordnern (gepaarte Namen)
+
+Mit `--split-by-type` landen RAW-Dateien in einem Unterordner `raw/` und JPG- (bzw. andere Bild-)Dateien in `jpg/` unter jedem Datumsordner. Aufnahmen-Paare (gleicher Basisname, z.B. `IMG_1000.CR3` und `IMG_1000.JPG`) erhalten dieselbe Sequenznummer und passende Dateinamen (z.B. `raw/20260124_Event_001.cr3` und `jpg/20260124_Event_001.jpg`). Enthält die Quelle nur JPGs oder nur RAWs, wird nur der jeweilige Unterordner angelegt (kein leerer `raw/` oder `jpg/`).
+
+```bash
+pg-import /Volumes/CARD --split-by-type --event "Endurotraining"
+```
+
 ## Phase 3: Auswahl & Organisation
 
 ### Alben erstellen

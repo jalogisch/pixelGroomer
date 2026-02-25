@@ -121,6 +121,14 @@ PhotoLibrary/
 
 The folder structure is configurable via `FOLDER_STRUCTURE` in `.env` (see [Configuration](configuration.en.md)).
 
+### Import with RAW and JPG in separate folders (paired names)
+
+Use `--split-by-type` to put RAW files in a `raw/` subfolder and JPG (and other image) files in a `jpg/` subfolder under each date folder. Same-shot pairs (same base name, e.g. `IMG_1000.CR3` and `IMG_1000.JPG`) get the same sequence number and matching filenames (e.g. `raw/20260124_Event_001.cr3` and `jpg/20260124_Event_001.jpg`). When the source has only JPGs or only RAWs, only the relevant subfolder is created (no empty `raw/` or `jpg/`).
+
+```bash
+pg-import /Volumes/CARD --split-by-type --event "Endurotraining"
+```
+
 ## Phase 3: Selection & Organization
 
 ### Create albums
