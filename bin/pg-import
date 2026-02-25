@@ -338,42 +338,87 @@ create_import_plan() {
     
     log_step "Analyzing files..."
     
-    local i=0
-    for file in "${files[@]}"; do
-        ((++i))
-        
-        if [[ "$VERBOSE" == "true" ]]; then
-            log_progress "$i" "$total" "Analyzing"
-        fi
-        
-        # Get date from EXIF or fall back to file modification date
-        local date
-        date=$(get_exif_date "$file")
-        
-        if [[ -z "$date" ]]; then
-            # Fall back to file modification date
-            if [[ "$(uname)" == "Darwin" ]]; then
-                date=$(stat -f "%Sm" -t "%Y%m%d" "$file")
-            else
-                date=$(date -r "$file" +%Y%m%d)
+    if [[ "$SPLIT_BY_TYPE" == "true" ]]; then
+        # Group by (date, base_name); one sequence per shot; raw/ and jpg/ subfolders
+        local sortfile
+        sortfile=$(mktemp)
+        # shellcheck disable=SC2064
+        trap "map_cleanup '$date_sequences'; rm -f '$sortfile'" RETURN
+        local sep=$'\x01'
+        local i=0
+        for file in "${files[@]}"; do
+            ((++i))
+            if [[ "$VERBOSE" == "true" ]]; then
+                log_progress "$i" "$total" "Analyzing"
             fi
-        fi
-        
-        # Increment sequence for this date
-        local seq
-        seq=$(map_incr "$date_sequences" "$date")
-        
-        # Generate target path using configurable folder structure
-        local target_dir
-        target_dir=$(get_target_dir "$ARCHIVE_DIR" "$date")
-        
-        local new_name
-        new_name=$(generate_filename "$file" "$seq" "$date")
-        local target_path="${target_dir}/${new_name}"
-        
-        # Store in plan
-        plan+=("$file|$target_path|$date")
-    done
+            local date
+            date=$(get_exif_date "$file")
+            if [[ -z "$date" ]]; then
+                if [[ "$(uname)" == "Darwin" ]]; then
+                    date=$(stat -f "%Sm" -t "%Y%m%d" "$file")
+                else
+                    date=$(date -r "$file" +%Y%m%d)
+                fi
+            fi
+            local base
+            base=$(get_basename "$file")
+            echo "${date}${sep}${base}${sep}${file}" >> "$sortfile"
+        done
+        sort "$sortfile" > "${sortfile}.sorted"
+        mv "${sortfile}.sorted" "$sortfile"
+        local prev_key=""
+        local date base file rest ext seq target_dir subdir new_name target_path
+        while IFS= read -r line; do
+            [[ -z "$line" ]] && continue
+            date="${line%%${sep}*}"
+            rest="${line#*${sep}}"
+            base="${rest%%${sep}*}"
+            file="${rest#*${sep}}"
+            local key="${date}|${base}"
+            if [[ "$key" != "$prev_key" ]]; then
+                seq=$(map_incr "$date_sequences" "$date")
+                prev_key="$key"
+            fi
+            ext=$(get_extension "$file")
+            if is_raw_extension "$ext"; then
+                subdir="raw"
+            else
+                subdir="jpg"
+            fi
+            target_dir=$(get_target_dir "$ARCHIVE_DIR" "$date")
+            target_dir="${target_dir}/${subdir}"
+            new_name=$(generate_filename "$file" "$seq" "$date")
+            target_path="${target_dir}/${new_name}"
+            plan+=("$file|$target_path|$date")
+        done < "$sortfile"
+        rm -f "$sortfile"
+    else
+        # Original behaviour: flat date folder, one sequence per file
+        local i=0
+        for file in "${files[@]}"; do
+            ((++i))
+            if [[ "$VERBOSE" == "true" ]]; then
+                log_progress "$i" "$total" "Analyzing"
+            fi
+            local date
+            date=$(get_exif_date "$file")
+            if [[ -z "$date" ]]; then
+                if [[ "$(uname)" == "Darwin" ]]; then
+                    date=$(stat -f "%Sm" -t "%Y%m%d" "$file")
+                else
+                    date=$(date -r "$file" +%Y%m%d)
+                fi
+            fi
+            local seq
+            seq=$(map_incr "$date_sequences" "$date")
+            local target_dir
+            target_dir=$(get_target_dir "$ARCHIVE_DIR" "$date")
+            local new_name
+            new_name=$(generate_filename "$file" "$seq" "$date")
+            local target_path="${target_dir}/${new_name}"
+            plan+=("$file|$target_path|$date")
+        done
+    fi
     
     echo "" >&2
     

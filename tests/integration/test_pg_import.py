@@ -100,6 +100,45 @@ class TestPgImportSplitByType:
         output = result.stdout + result.stderr
         assert '--split-by-type' in output
 
+    @requires_exiftool
+    @requires_pillow
+    def test_split_by_type_paired_names_in_raw_and_jpg_folders(
+        self, run_script, tmp_path, test_env
+    ):
+        """With --split-by-type, RAW and JPG get same seq and land in raw/ and jpg/."""
+        from pathlib import Path
+        from datetime import datetime
+        from tests.fixtures.photo_factory import (
+            create_jpeg_with_date,
+            create_raw_like,
+            set_exif,
+        )
+
+        sd = tmp_path / 'sd'
+        (sd / 'DCIM' / '100CANON').mkdir(parents=True)
+        d = datetime(2026, 1, 24, 14, 0, 0)
+        date_str = d.strftime('%Y:%m:%d %H:%M:%S')
+        create_jpeg_with_date(sd / 'DCIM' / '100CANON' / 'IMG_1000.JPG', date=d)
+        raw_path = create_raw_like(sd / 'DCIM' / '100CANON' / 'IMG_1000.CR3')
+        set_exif(raw_path, DateTimeOriginal=date_str, CreateDate=date_str)
+        result = run_script(
+            'pg-import', str(sd), '--event', 'E', '--no-delete', '--split-by-type'
+        )
+        assert result.returncode == 0
+        archive = Path(test_env['PHOTO_LIBRARY'])
+        date_dirs = [x for x in archive.iterdir() if x.is_dir()]
+        assert len(date_dirs) == 1, 'expect one date folder'
+        date_dir = date_dirs[0]
+        raw_dir = date_dir / 'raw'
+        jpg_dir = date_dir / 'jpg'
+        assert raw_dir.is_dir(), 'raw/ subfolder should exist'
+        assert jpg_dir.is_dir(), 'jpg/ subfolder should exist'
+        raws = list(raw_dir.glob('*.*'))
+        jpgs = list(jpg_dir.glob('*.*'))
+        assert len(raws) == 1 and len(jpgs) == 1
+        assert raws[0].stem == jpgs[0].stem, 'paired base names'
+        assert '_001' in raws[0].name and '_001' in jpgs[0].name
+
 
 class TestPgImportWithEvent:
     """Tests for pg-import with --event flag."""
