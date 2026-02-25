@@ -17,6 +17,7 @@ from tests.fixtures.photo_factory import (
     create_import_yaml,
     create_raw_like,
     get_exif,
+    set_exif,
 )
 
 
@@ -213,6 +214,46 @@ class TestMixedFileTypes:
         
         assert len(jpgs) == 3, f"Expected 3 JPGs, got {len(jpgs)}"
         assert len(raws) == 3, f"Expected 3 RAWs, got {len(raws)}"
+
+    @requires_exiftool
+    @requires_pillow
+    def test_raw_plus_jpg_import_with_split_by_type(
+        self, run_script, tmp_path: Path, test_env
+    ):
+        """
+        With --split-by-type, 3 RAW+JPG pairs go to raw/ and jpg/ with paired names.
+        """
+        archive_dir = test_env['PHOTO_LIBRARY']
+        sd_card = tmp_path / 'SD_CARD'
+        dcim = sd_card / 'DCIM' / '100CANON'
+        dcim.mkdir(parents=True)
+        date = datetime(2026, 1, 24, 14, 0, 0)
+        date_str = date.strftime('%Y:%m:%d %H:%M:%S')
+        for i in range(3):
+            create_jpeg_with_date(
+                dcim / f'IMG_{1000 + i:04d}.JPG',
+                date=date
+            )
+            raw_path = create_raw_like(dcim / f'IMG_{1000 + i:04d}.CR3')
+            set_exif(raw_path, DateTimeOriginal=date_str, CreateDate=date_str)
+        result = run_script(
+            'pg-import', str(sd_card),
+            '--event', 'MixedTest',
+            '--no-delete',
+            '--split-by-type'
+        )
+        assert result.returncode == 0
+        archive_path = Path(archive_dir)
+        date_dirs = [x for x in archive_path.iterdir() if x.is_dir()]
+        assert len(date_dirs) == 1
+        raw_dir = date_dirs[0] / 'raw'
+        jpg_dir = date_dirs[0] / 'jpg'
+        assert raw_dir.is_dir() and jpg_dir.is_dir()
+        raws = sorted(raw_dir.glob('*.*'))
+        jpgs = sorted(jpg_dir.glob('*.*'))
+        assert len(raws) == 3 and len(jpgs) == 3
+        for i in range(3):
+            assert raws[i].stem == jpgs[i].stem, f"pair {i} should have same base name"
 
 
 class TestImportYamlWorkflow:
