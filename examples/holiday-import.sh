@@ -4,6 +4,7 @@
 #
 # Use after a holiday: no event or location, only author/copyright/credit from
 # the card's .import.yaml or .env. One folder per day by EXIF date.
+# RAW and JPG are placed in raw/ and jpg/ subfolders with paired names (--split-by-type).
 
 set -euo pipefail
 
@@ -29,6 +30,8 @@ Options:
   --no-delete           Do not delete source files after import (default)
   -n, --dry-run         Show what would be done without changes
   -h, --help            Show this help
+
+Import places RAW and JPG in raw/ and jpg/ subfolders per day (paired names).
 
 Examples:
   holiday-import.sh /Volumes/CARD
@@ -84,7 +87,7 @@ main() {
         exit 1
     fi
 
-    local args=("$source" --trip)
+    local args=("$source" --trip --split-by-type)
     [[ "$no_delete" == true ]] && args+=(--no-delete)
     [[ -n "$output_dir" ]] && args+=(--output "$output_dir")
     [[ "$dry_run" == true ]] && args+=(--dry-run)

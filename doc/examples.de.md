@@ -19,7 +19,7 @@ Dieses Dokument zeigt, wie PixelGroomer-Tools zu vollständigen Workflows kombin
 
 ## Urlaubs-Import Workflow
 
-Das Script `examples/holiday-import.sh` importiert alle Fotos von einer SD-Karte im Trip-Modus. Kein Event und Ort — nur Autor, Copyright und Credit aus der `.import.yaml` der Karte oder .env. Ein Ordner pro Tag nach EXIF-Datum. Ideal für den Import nach dem Urlaub.
+Das Script `examples/holiday-import.sh` importiert alle Fotos von einer SD-Karte im Trip-Modus. Kein Event und Ort — nur Autor, Copyright und Credit aus der `.import.yaml` der Karte oder .env. Ein Ordner pro Tag nach EXIF-Datum; RAW und JPG landen in Unterordnern `raw/` und `jpg/` mit gepaarten Namen (`--split-by-type`). Ideal für den Import nach dem Urlaub.
 
 ### Verwendung
 
@@ -273,7 +273,7 @@ pg-album add "GS_Treffen_Best" ~/Pictures/PhotoLibrary/2026-07-10/*.cr3
 
 ## Adventure Camp Workflow
 
-Das Script `examples/adventure-camp-workflow.sh` führt Import (Event "Adventure Camp", Ort "Stadtoldendorf") und anschließend RAW-Entwicklung mit RawTherapee und einem Kodak-Preset aus. Ideal für ein zweitägiges Wochenend-Event.
+Das Script `examples/adventure-camp-workflow.sh` führt Import (Event "Adventure Camp", Ort "Stadtoldendorf", mit `--split-by-type`: RAW in `raw/`, JPG in `jpg/` pro Datum) und anschließend RAW-Entwicklung mit RawTherapee und einem Kodak-Preset aus. Ideal für ein zweitägiges Wochenend-Event.
 
 ### Verwendung
 

@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # PixelGroomer - Adventure Camp Workflow
-# Weekend event: import with event "Adventure Camp" and location "Stadtoldendorf",
-# then develop RAWs with RawTherapee and a Kodak-style preset.
+# Weekend event: import with event "Adventure Camp" and location "Stadtoldendorf"
+# (RAW and JPG in raw/ and jpg/ subfolders with paired names), then develop RAWs
+# with RawTherapee and a Kodak-style preset.
 
 set -euo pipefail
 
@@ -39,7 +40,7 @@ Usage: adventure-camp-workflow.sh [OPTIONS] <source>
 
 Arguments:
   <source>              SD card path (e.g. /Volumes/EOS_DIGITAL)
-  <library-path>        With --skip-import: folder with RAWs (e.g. PhotoLibrary/2026-02-22)
+  <library-path>        With --skip-import: folder with RAWs (e.g. PhotoLibrary/2026-02-22 or its raw/ subfolder)
 
 Options:
   -o, --output DIR      Output directory for developed JPGs (default: EXPORT_DIR or library/AdventureCamp_developed)
@@ -48,6 +49,8 @@ Options:
   --no-delete           Do not delete source files after import
   -n, --dry-run         Show what would be done without changes
   -h, --help            Show this help
+
+Import uses --split-by-type (RAW in raw/, JPG in jpg/ per date; pg-develop finds RAWs in raw/).
 
 Examples:
   adventure-camp-workflow.sh /Volumes/CARD
@@ -122,7 +125,7 @@ main() {
     # -------------------------------------------------------------------------
     if [[ "$skip_import" == false ]]; then
         log_step "Importing from $source (event: $EVENT_NAME, location: $EVENT_LOCATION)"
-        local import_args=("$source" --event "$EVENT_NAME" --location "$EVENT_LOCATION")
+        local import_args=("$source" --event "$EVENT_NAME" --location "$EVENT_LOCATION" --split-by-type)
         [[ "$no_delete" == true ]] && import_args+=(--no-delete)
         [[ "$dry_run" == true ]] && import_args+=(--dry-run)
         "$PIXELGROOMER_ROOT/bin/pg-import" "${import_args[@]}"
