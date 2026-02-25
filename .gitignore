@@ -42,6 +42,9 @@ __pycache__/
 # Git worktrees (isolated branches)
 .worktrees/
 
+# Cursor memory (local/session context; rules are tracked)
+.cursor/memory/
+
 # Photo library (if accidentally placed in repo)
 PhotoLibrary/
 Albums/
