@@ -196,42 +196,63 @@ print(exif.show('$file'))
 write_metadata() {
     local files=("$@")
     
-    # Build arguments for Python script
-    local py_args=""
-    [[ -n "$AUTHOR" ]] && py_args+="author='$AUTHOR', "
-    [[ -n "$COPYRIGHT" ]] && py_args+="copyright='$COPYRIGHT', "
-    [[ -n "$CREDIT" ]] && py_args+="credit='$CREDIT', "
-    [[ -n "$EVENT" ]] && py_args+="event='$EVENT', "
-    [[ -n "$LOCATION" ]] && py_args+="location='$LOCATION', "
-    [[ -n "$GPS" ]] && py_args+="gps='$GPS', "
-    [[ -n "$TITLE" ]] && py_args+="title='$TITLE', "
-    [[ -n "$DESCRIPTION" ]] && py_args+="description='$DESCRIPTION', "
-    [[ -n "$KEYWORDS" ]] && py_args+="keywords='$KEYWORDS', "
+    # Pass metadata and file list via environment so UTF-8 (e.g. ©) and quotes are preserved
+    export PG_EXIF_AUTHOR="$AUTHOR"
+    export PG_EXIF_COPYRIGHT="$COPYRIGHT"
+    export PG_EXIF_CREDIT="$CREDIT"
+    export PG_EXIF_EVENT="$EVENT"
+    export PG_EXIF_LOCATION="$LOCATION"
+    export PG_EXIF_GPS="$GPS"
+    export PG_EXIF_TITLE="$TITLE"
+    export PG_EXIF_DESCRIPTION="$DESCRIPTION"
+    export PG_EXIF_KEYWORDS="$KEYWORDS"
+    export PG_EXIF_FILES=""
+    if [[ ${#files[@]} -gt 0 ]]; then
+        export PG_EXIF_FILES="$(printf '%s\n' "${files[@]}")"
+    fi
     
-    if [[ -z "$py_args" ]]; then
+    local has_any=""
+    [[ -n "$AUTHOR" ]] && has_any=1
+    [[ -n "$COPYRIGHT" ]] && has_any=1
+    [[ -n "$CREDIT" ]] && has_any=1
+    [[ -n "$EVENT" ]] && has_any=1
+    [[ -n "$LOCATION" ]] && has_any=1
+    [[ -n "$GPS" ]] && has_any=1
+    [[ -n "$TITLE" ]] && has_any=1
+    [[ -n "$DESCRIPTION" ]] && has_any=1
+    [[ -n "$KEYWORDS" ]] && has_any=1
+    if [[ -z "$has_any" ]]; then
         log_warn "No metadata fields specified"
         return 0
     fi
     
-    # Remove trailing comma and space
-    py_args="${py_args%, }"
-    
-    # Convert bash array to Python list
-    local files_str=""
-    for f in "${files[@]}"; do
-        files_str+="'$f', "
-    done
-    files_str="${files_str%, }"
-    
     require_venv
-    "${PIXELGROOMER_VENV}/bin/python" << PYEOF
+    export PIXELGROOMER_ROOT
+    "${PIXELGROOMER_VENV}/bin/python" << 'PYEOF'
+import os
 import sys
-sys.path.insert(0, '${PIXELGROOMER_ROOT}/lib')
+root = os.environ.get("PIXELGROOMER_ROOT", "")
+if root:
+    sys.path.insert(0, os.path.join(root, "lib"))
 from exif_utils import ExifTool
 
+def _env(k):
+    return os.environ.get("PG_EXIF_" + k) or None
+
+kwargs = {}
+if _env("AUTHOR"):     kwargs["author"] = _env("AUTHOR")
+if _env("COPYRIGHT"):  kwargs["copyright"] = _env("COPYRIGHT")
+if _env("CREDIT"):     kwargs["credit"] = _env("CREDIT")
+if _env("EVENT"):      kwargs["event"] = _env("EVENT")
+if _env("LOCATION"):   kwargs["location"] = _env("LOCATION")
+if _env("GPS"):        kwargs["gps"] = _env("GPS")
+if _env("TITLE"):      kwargs["title"] = _env("TITLE")
+if _env("DESCRIPTION"): kwargs["description"] = _env("DESCRIPTION")
+if _env("KEYWORDS"):   kwargs["keywords"] = _env("KEYWORDS")
+
+files = [f for f in os.environ.get("PG_EXIF_FILES", "").split("\n") if f]
 exif = ExifTool()
-files = [$files_str]
-count = exif.write_batch(files, $py_args)
+count = exif.write_batch(files, **kwargs)
 print(f"Updated {count} of {len(files)} files")
 PYEOF
 }
