@@ -1,0 +1,79 @@
+#!/usr/bin/env bash
+# PixelGroomer - Prepare SD card for import
+# Copies .import.yaml template to the SD card so pg-import picks it up
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=../lib/utils.sh disable=SC1091
+source "$SCRIPT_DIR/../lib/utils.sh"
+
+CARD="${1:-/Volumes/EOS_DIGITAL}"
+TEMPLATE="${2:-identity}"   # identity | example
+
+show_help() {
+    cat << EOF
+pg-prepare-sd - Prepare SD card for pixelGroomer import
+
+USAGE:
+    pg-prepare-sd [<card_path>] [identity|example]
+
+DESCRIPTION:
+    Copies .import.yaml to the card's DCIM folder so pg-import uses it.
+    Creates DCIM if missing. Does not overwrite existing .import.yaml unless you remove it first.
+
+ARGUMENTS:
+    <card_path>   SD card mount point (default: /Volumes/EOS_DIGITAL)
+    identity      Use templates/.import.yaml.identity (author, copyright, credit; trip-friendly)
+    example       Use templates/.import.yaml.example (event, location, tags; edit before use)
+
+EXAMPLES:
+    pg-prepare-sd
+    pg-prepare-sd /Volumes/EOS_DIGITAL
+    pg-prepare-sd /Volumes/EOS_DIGITAL identity
+    pg-prepare-sd /Volumes/EOS_DIGITAL example
+
+EOF
+}
+
+if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
+    show_help
+    exit 0
+fi
+
+# If first arg looks like a path (exists or contains slash), use it as card and optional second as template
+if [[ -n "${1:-}" && "${1:-}" != "identity" && "${1:-}" != "example" ]]; then
+    CARD="$1"
+    TEMPLATE="${2:-identity}"
+elif [[ "${1:-}" == "identity" || "${1:-}" == "example" ]]; then
+    TEMPLATE="$1"
+fi
+
+if [[ ! -d "$CARD" ]]; then
+    log_warn "Card path not found: $CARD"
+    echo "Insert the SD card (Canon EOS mounts as EOS_DIGITAL) and run again." >&2
+    exit 1
+fi
+
+DCIM="$CARD/DCIM"
+mkdir -p "$DCIM"
+
+case "$TEMPLATE" in
+    identity) SRC="$SCRIPT_DIR/../templates/.import.yaml.identity" ;;
+    example)  SRC="$SCRIPT_DIR/../templates/.import.yaml.example" ;;
+    *) log_warn "Unknown template: $TEMPLATE (use identity or example)"; exit 1 ;;
+esac
+
+if [[ ! -f "$SRC" ]]; then
+    log_warn "Template not found: $SRC"
+    exit 1
+fi
+
+if [[ -f "$DCIM/.import.yaml" ]]; then
+    log_warn "DCIM/.import.yaml already exists on card. Remove it first to replace."
+    exit 1
+fi
+
+cp "$SRC" "$DCIM/.import.yaml"
+log_success "Copied $TEMPLATE template to $DCIM/.import.yaml"
+echo "Edit author/copyright/credit (identity) or event/location (example) if needed, then run: pg-import $CARD"
