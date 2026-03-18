@@ -208,7 +208,9 @@ write_metadata() {
     export PG_EXIF_KEYWORDS="$KEYWORDS"
     export PG_EXIF_FILES=""
     if [[ ${#files[@]} -gt 0 ]]; then
-        export PG_EXIF_FILES="$(printf '%s\n' "${files[@]}")"
+        local _pg_exif_files_list
+        _pg_exif_files_list="$(printf '%s\n' "${files[@]}")"
+        export PG_EXIF_FILES="$_pg_exif_files_list"
     fi
     
     local has_any=""
