@@ -1,0 +1,114 @@
+#!/usr/bin/env bash
+# PixelGroomer - Split by type
+# Moves existing files in a date folder into raw/ and jpg/ subfolders
+# Use after an import that did not use --split-by-type
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=../lib/config.sh disable=SC1091
+source "$SCRIPT_DIR/../lib/config.sh"
+# shellcheck source=../lib/utils.sh disable=SC1091
+source "$SCRIPT_DIR/../lib/utils.sh"
+
+DRY_RUN=false
+
+show_help() {
+    cat << EOF
+pg-split-by-type - Move files into raw/ and jpg/ subfolders
+
+USAGE:
+    pg-split-by-type <directory> [<directory>...]
+    pg-split-by-type /Volumes/SanDisk/Bilder/2026-03-14
+
+OPTIONS:
+    -n, --dry-run    Show what would be moved without changing files
+    -h, --help       Show this help
+
+Only top-level files in each directory are moved. RAW extensions (cr2, cr3, nef, ...)
+go to raw/; image extensions (jpg, jpeg, png, ...) go to jpg/.
+
+EOF
+}
+
+split_directory() {
+    local dir="$1"
+    if [[ ! -d "$dir" ]]; then
+        log_warn "Not a directory: $dir"
+        return 1
+    fi
+    local raw_dir="$dir/raw"
+    local jpg_dir="$dir/jpg"
+    local moved_raw=0 moved_jpg=0
+
+    mkdir -p "$raw_dir" "$jpg_dir"
+
+    while IFS= read -r -d '' file; do
+        [[ -f "$file" ]] || continue
+        local base name ext
+        name=$(basename "$file")
+        base="${name%.*}"
+        ext="${name##*.}"
+        if [[ -z "$ext" || "$base" == "$name" ]]; then
+            continue
+        fi
+        if is_raw_extension "$ext"; then
+            if [[ "$DRY_RUN" == "true" ]]; then
+                log_info "Would move: $name -> raw/"
+            else
+                mv "$file" "$raw_dir/"
+            fi
+            ((moved_raw++)) || true
+        elif is_image_extension "$ext"; then
+            if [[ "$DRY_RUN" == "true" ]]; then
+                log_info "Would move: $name -> jpg/"
+            else
+                mv "$file" "$jpg_dir/"
+            fi
+            ((moved_jpg++)) || true
+        fi
+    done < <(find "$dir" -maxdepth 1 -type f -print0 2>/dev/null)
+
+    if [[ $moved_raw -gt 0 || $moved_jpg -gt 0 ]]; then
+        if [[ "$DRY_RUN" == "true" ]]; then
+            log_info "[DRY-RUN] $dir: would move $moved_raw to raw/, $moved_jpg to jpg/"
+        else
+            log_success "$dir: moved $moved_raw to raw/, $moved_jpg to jpg/"
+        fi
+    else
+        log_info "$dir: no files to move (already split or empty)"
+    fi
+}
+
+# Parse options
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -n|--dry-run)
+            DRY_RUN=true
+            shift
+            ;;
+        -h|--help)
+            show_help
+            exit 0
+            ;;
+        -*)
+            log_error "Unknown option: $1"
+            show_help
+            exit 1
+            ;;
+        *)
+            break
+            ;;
+    esac
+done
+
+if [[ $# -eq 0 ]]; then
+    log_error "At least one directory required"
+    show_help
+    exit 1
+fi
+
+log_step "Splitting by type (raw/ and jpg/)"
+for dir in "$@"; do
+    split_directory "$dir"
+done
