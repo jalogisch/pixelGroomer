@@ -414,10 +414,10 @@ for d in dates:
         local date base file rest ext seq target_dir subdir new_name target_path
         while IFS= read -r line; do
             [[ -z "$line" ]] && continue
-            date="${line%%${sep}*}"
-            rest="${line#*${sep}}"
-            base="${rest%%${sep}*}"
-            file="${rest#*${sep}}"
+            date="${line%%"${sep}"*}"
+            rest="${line#*"${sep}"}"
+            base="${rest%%"${sep}"*}"
+            file="${rest#*"${sep}"}"
             local key="${date}|${base}"
             if [[ "$key" != "$prev_key" ]]; then
                 seq=$(map_incr "$date_sequences" "$date")
