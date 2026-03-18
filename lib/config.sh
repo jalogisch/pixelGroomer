@@ -25,6 +25,7 @@ _pg_caller_vars=""
 [[ -n "${GENERATE_CHECKSUMS:-}" ]] && _pg_caller_vars="$_pg_caller_vars GENERATE_CHECKSUMS"
 [[ -n "${FOLDER_STRUCTURE:-}" ]] && _pg_caller_vars="$_pg_caller_vars FOLDER_STRUCTURE"
 [[ -n "${NAMING_PATTERN:-}" ]] && _pg_caller_vars="$_pg_caller_vars NAMING_PATTERN"
+[[ -n "${SPLIT_BY_TYPE:-}" ]] && _pg_caller_vars="$_pg_caller_vars SPLIT_BY_TYPE"
 
 # Load .env file if it exists
 # Only overrides variables NOT set by calling environment
@@ -73,6 +74,12 @@ load_config
 : "${CHECKSUM_ALGORITHM:=sha256}"
 [[ -z "${FOLDER_STRUCTURE:-}" ]] && FOLDER_STRUCTURE='{year}-{month}-{day}'
 : "${PROMPT_ARCHIVE_DIR:=false}"
+
+# Import layout: RAW in raw/, JPG in jpg/ per date (default). false = flat in date folder.
+case "${SPLIT_BY_TYPE:-true}" in
+    false|0|no|NO) SPLIT_BY_TYPE=false ;;
+    *) SPLIT_BY_TYPE=true ;;
+esac
 
 # Load .import.yaml from a directory (typically SD card)
 # Returns key=value pairs on stdout

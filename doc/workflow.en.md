@@ -106,14 +106,19 @@ Or use the wrapper script: `./examples/holiday-import.sh /Volumes/CARD`
 7. **Generate checksums** - For integrity verification
 8. **Optional: Delete source** - After confirmation
 
-### Result structure
+### Result structure (default)
+
+By default, RAW and JPG go into separate subfolders with **paired names** (same-shot `IMG_1000.CR3` + `IMG_1000.JPG` share one sequence number). Set `SPLIT_BY_TYPE=false` in `.env` or pass `--no-split-by-type` for a flat layout (all files in the date folder).
 
 ```
 PhotoLibrary/
 ├── 2026-01-24/                         # Folder structure: {year}-{month}-{day}
-│   ├── 20260124_Endurotraining_001.cr3
-│   ├── 20260124_Endurotraining_002.cr3
-│   ├── 20260124_Endurotraining_003.jpg
+│   ├── raw/
+│   │   ├── 20260124_Endurotraining_001.cr3
+│   │   └── 20260124_Endurotraining_002.cr3
+│   ├── jpg/
+│   │   ├── 20260124_Endurotraining_001.jpg
+│   │   └── 20260124_Endurotraining_003.jpg
 │   └── .checksums
 ├── 2026-01-25/
 │   └── ...
@@ -121,13 +126,9 @@ PhotoLibrary/
 
 The folder structure is configurable via `FOLDER_STRUCTURE` in `.env` (see [Configuration](configuration.en.md)).
 
-### Import with RAW and JPG in separate folders (paired names)
+### Flat layout (optional)
 
-Use `--split-by-type` to put RAW files in a `raw/` subfolder and JPG (and other image) files in a `jpg/` subfolder under each date folder. Same-shot pairs (same base name, e.g. `IMG_1000.CR3` and `IMG_1000.JPG`) get the same sequence number and matching filenames (e.g. `raw/20260124_Event_001.cr3` and `jpg/20260124_Event_001.jpg`). When the source has only JPGs or only RAWs, only the relevant subfolder is created (no empty `raw/` or `jpg/`).
-
-```bash
-pg-import /Volumes/CARD --split-by-type --event "Endurotraining"
-```
+Use `--no-split-by-type` (or `SPLIT_BY_TYPE=false` in `.env`) if you want RAW and JPG in the date folder root instead of `raw/` and `jpg/`.
 
 ## Phase 3: Selection & Organization
 
@@ -141,12 +142,12 @@ pg-album create "Endurotraining_Highlights"
 
 # Add best photos (symlinks, no storage used)
 pg-album add "Endurotraining_Highlights" \
-    ~/Pictures/PhotoLibrary/2026-01-24/20260124_Endurotraining_001.cr3 \
-    ~/Pictures/PhotoLibrary/2026-01-24/20260124_Endurotraining_015.cr3 \
-    ~/Pictures/PhotoLibrary/2026-01-24/20260124_Endurotraining_042.jpg
+    ~/Pictures/PhotoLibrary/2026-01-24/raw/20260124_Endurotraining_001.cr3 \
+    ~/Pictures/PhotoLibrary/2026-01-24/raw/20260124_Endurotraining_015.cr3 \
+    ~/Pictures/PhotoLibrary/2026-01-24/jpg/20260124_Endurotraining_042.jpg
 
 # Or with wildcards
-pg-album add "Endurotraining_Highlights" ~/Pictures/PhotoLibrary/2026-01-24/*.jpg
+pg-album add "Endurotraining_Highlights" ~/Pictures/PhotoLibrary/2026-01-24/jpg/*.jpg
 ```
 
 ### Album structure
@@ -188,11 +189,11 @@ pg-album remove "Endurotraining_Highlights" photo.jpg
 
 ```bash
 # Develop all RAWs in a folder
-pg-develop ~/Pictures/PhotoLibrary/2026-01-24/*.cr3 \
+pg-develop ~/Pictures/PhotoLibrary/2026-01-24/raw/*.cr3 \
     --output ~/Pictures/Export/Endurotraining/
 
 # With resize for web
-pg-develop ~/Pictures/PhotoLibrary/2026-01-24/*.cr3 \
+pg-develop ~/Pictures/PhotoLibrary/2026-01-24/raw/*.cr3 \
     --output ~/Pictures/Export/Web/ \
     --resize 1920x \
     --quality 85
@@ -248,7 +249,7 @@ For a named weekend event (e.g. "Adventure Camp" at "Stadtoldendorf"): import wi
    `pg-import /Volumes/CARD --event "Adventure Camp" --location "Stadtoldendorf"`
 
 2. **Develop:** Use RawTherapee with a Kodak-style PP3 preset:
-   `pg-develop ~/Pictures/PhotoLibrary/2026-02-22/*.cr3 --processor rawtherapee --preset /path/to/kodak.pp3 --output ./developed`
+   `pg-develop ~/Pictures/PhotoLibrary/2026-02-22/raw/*.cr3 --processor rawtherapee --preset /path/to/kodak.pp3 --output ./developed`
 
    If the project ships a preset (e.g. `templates/rawtherapee-kodak-portra.pp3`), use that path. Otherwise use a PP3 from the community or create one in RawTherapee; set `RAWTHERAPEE_PRESET` in .env or pass `--preset`. (RawPedia [Film Simulation](https://rawpedia.rawtherapee.com/Film_Simulation) is HaldCLUT-based for the GUI; for CLI you need a .pp3 file.) You can download Kodak Portra PP3s from [TheSquirrelMafia/RawTherapee-PP3-Settings](https://github.com/TheSquirrelMafia/RawTherapee-PP3-Settings) (e.g. under *TSM - Film Simulations / Color Films*). The project does not ship a preset: we only bundle one with a clear permissive license (CC0/Unlicense/MIT); no such licensed PP3 was found. See [RawTherapee preset research](preset-research.en.md) for full details.
 
@@ -336,10 +337,10 @@ open -a Darktable ~/Pictures/PhotoLibrary/2026-01-24/
 
 # 4. Mark best photos and create album
 pg-album create "Festival_Best"
-pg-album add "Festival_Best" ~/Pictures/PhotoLibrary/2026-01-24/20260124_Festival_{001,015,023,042}.cr3
+pg-album add "Festival_Best" ~/Pictures/PhotoLibrary/2026-01-24/raw/20260124_Festival_{001,015,023,042}.cr3
 
 # 5. Develop for social media
-pg-develop ~/Pictures/PhotoLibrary/2026-01-24/*.cr3 \
+pg-develop ~/Pictures/PhotoLibrary/2026-01-24/raw/*.cr3 \
     --output ~/Pictures/Export/Festival/ \
     --resize 1920x
 

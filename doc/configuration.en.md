@@ -270,8 +270,11 @@ Options:
   -o, --output <dir>    Target archive
   -n, --dry-run         Preview without changes
   --no-delete           Don't delete source
+  --no-split-by-type    Flat layout in date folder
   -v, --verbose         Detailed output
 ```
+
+**Import layout:** By default RAW goes to `raw/` and JPG to `jpg/` under each date folder (`SPLIT_BY_TYPE=true` in `.env`). Use `--no-split-by-type` or `SPLIT_BY_TYPE=false` for a flat layout.
 
 **Examples:**
 

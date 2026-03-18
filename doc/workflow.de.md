@@ -106,14 +106,19 @@ Oder das Wrapper-Skript: `./examples/holiday-import.sh /Volumes/CARD`
 7. **Checksums generieren** - Für Integritätsprüfung
 8. **Optional: Quelle löschen** - Nach Bestätigung
 
-### Ergebnis-Struktur
+### Ergebnis-Struktur (Standard)
+
+Standardmäßig liegen RAW und JPG in getrennten Unterordnern mit **gepaarten Namen** (gleiche Aufnahme `IMG_1000.CR3` + `IMG_1000.JPG` teilt eine Sequenznummer). Mit `SPLIT_BY_TYPE=false` in `.env` oder `--no-split-by-type` erhält man eine flache Struktur (alle Dateien im Datumsordner).
 
 ```
 PhotoLibrary/
 ├── 2026-01-24/                         # Ordnerstruktur: {year}-{month}-{day}
-│   ├── 20260124_Hochzeit_001.cr3
-│   ├── 20260124_Hochzeit_002.cr3
-│   ├── 20260124_Hochzeit_003.jpg
+│   ├── raw/
+│   │   ├── 20260124_Endurotraining_001.cr3
+│   │   └── 20260124_Endurotraining_002.cr3
+│   ├── jpg/
+│   │   ├── 20260124_Endurotraining_001.jpg
+│   │   └── 20260124_Endurotraining_003.jpg
 │   └── .checksums
 ├── 2026-01-25/
 │   └── ...
@@ -121,13 +126,9 @@ PhotoLibrary/
 
 Die Ordnerstruktur ist über `FOLDER_STRUCTURE` in `.env` konfigurierbar (siehe [Konfiguration](configuration.md)).
 
-### Import mit RAW und JPG in getrennten Ordnern (gepaarte Namen)
+### Flache Struktur (optional)
 
-Mit `--split-by-type` landen RAW-Dateien in einem Unterordner `raw/` und JPG- (bzw. andere Bild-)Dateien in `jpg/` unter jedem Datumsordner. Aufnahmen-Paare (gleicher Basisname, z.B. `IMG_1000.CR3` und `IMG_1000.JPG`) erhalten dieselbe Sequenznummer und passende Dateinamen (z.B. `raw/20260124_Event_001.cr3` und `jpg/20260124_Event_001.jpg`). Enthält die Quelle nur JPGs oder nur RAWs, wird nur der jeweilige Unterordner angelegt (kein leerer `raw/` oder `jpg/`).
-
-```bash
-pg-import /Volumes/CARD --split-by-type --event "Endurotraining"
-```
+`--no-split-by-type` (oder `SPLIT_BY_TYPE=false` in `.env`), wenn RAW und JPG direkt im Datumsordner liegen sollen statt in `raw/` und `jpg/`.
 
 ## Phase 3: Auswahl & Organisation
 
@@ -141,12 +142,12 @@ pg-album create "Alps_Tour_Highlights"
 
 # Beste Fotos hinzufügen (Symlinks, kein Speicherverbrauch)
 pg-album add "Alps_Tour_Highlights" \
-    ~/Pictures/PhotoLibrary/2026-01-24/20260124_Hochzeit_001.cr3 \
-    ~/Pictures/PhotoLibrary/2026-01-24/20260124_Hochzeit_015.cr3 \
-    ~/Pictures/PhotoLibrary/2026-01-24/20260124_Hochzeit_042.jpg
+    ~/Pictures/PhotoLibrary/2026-01-24/raw/20260124_Hochzeit_001.cr3 \
+    ~/Pictures/PhotoLibrary/2026-01-24/raw/20260124_Hochzeit_015.cr3 \
+    ~/Pictures/PhotoLibrary/2026-01-24/jpg/20260124_Hochzeit_042.jpg
 
 # Oder mit Wildcards
-pg-album add "Alps_Tour_Highlights" ~/Pictures/PhotoLibrary/2026-01-24/*.jpg
+pg-album add "Alps_Tour_Highlights" ~/Pictures/PhotoLibrary/2026-01-24/jpg/*.jpg
 ```
 
 ### Album-Struktur
@@ -188,11 +189,11 @@ pg-album remove "Alps_Tour_Highlights" foto.jpg
 
 ```bash
 # Alle RAWs eines Ordners entwickeln
-pg-develop ~/Pictures/PhotoLibrary/2026-01-24/*.cr3 \
+pg-develop ~/Pictures/PhotoLibrary/2026-01-24/raw/*.cr3 \
     --output ~/Pictures/Export/Hochzeit/
 
 # Mit Resize für Web
-pg-develop ~/Pictures/PhotoLibrary/2026-01-24/*.cr3 \
+pg-develop ~/Pictures/PhotoLibrary/2026-01-24/raw/*.cr3 \
     --output ~/Pictures/Export/Web/ \
     --resize 1920x \
     --quality 85
@@ -248,7 +249,7 @@ Für ein benanntes Wochenend-Event (z. B. "Adventure Camp" in "Stadtoldendorf"
    `pg-import /Volumes/CARD --event "Adventure Camp" --location "Stadtoldendorf"`
 
 2. **Entwickeln:** RawTherapee mit Kodak-PP3-Preset:  
-   `pg-develop ~/Pictures/PhotoLibrary/2026-02-22/*.cr3 --processor rawtherapee --preset /pfad/zu/kodak.pp3 --output ./developed`
+   `pg-develop ~/Pictures/PhotoLibrary/2026-02-22/raw/*.cr3 --processor rawtherapee --preset /pfad/zu/kodak.pp3 --output ./developed`
 
    Wenn das Projekt ein Preset mitliefert (z. B. `templates/rawtherapee-kodak-portra.pp3`), diesen Pfad nutzen. Sonst ein PP3 aus der Community verwenden oder in RawTherapee anlegen; `RAWTHERAPEE_PRESET` in .env setzen oder `--preset` übergeben. (RawPedia [Film Simulation](https://rawpedia.rawtherapee.com/Film_Simulation) nutzt HaldCLUT in der GUI; für die CLI brauchst du eine .pp3-Datei.) Kodak-Portra-PP3s kannst du z. B. von [TheSquirrelMafia/RawTherapee-PP3-Settings](https://github.com/TheSquirrelMafia/RawTherapee-PP3-Settings) laden (unter *TSM - Film Simulations / Color Films*). Das Projekt liefert kein Preset mit: Wir bündeln nur eines mit klarer permissiver Lizenz (CC0/Unlicense/MIT); ein solches PP3 wurde nicht gefunden. Vollständige Details: [RawTherapee-Preset-Recherche](preset-research.de.md).
 
@@ -336,10 +337,10 @@ open -a Darktable ~/Pictures/PhotoLibrary/2026-01-24/
 
 # 4. Beste Fotos markieren und Album erstellen
 pg-album create "Stadtfest_Best"
-pg-album add "Stadtfest_Best" ~/Pictures/PhotoLibrary/2026-01-24/20260124_Stadtfest_{001,015,023,042}.cr3
+pg-album add "Stadtfest_Best" ~/Pictures/PhotoLibrary/2026-01-24/raw/20260124_Stadtfest_{001,015,023,042}.cr3
 
 # 5. Für Social Media entwickeln
-pg-develop ~/Pictures/PhotoLibrary/2026-01-24/*.cr3 \
+pg-develop ~/Pictures/PhotoLibrary/2026-01-24/raw/*.cr3 \
     --output ~/Pictures/Export/Stadtfest/ \
     --resize 1920x
 

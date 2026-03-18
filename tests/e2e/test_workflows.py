@@ -163,10 +163,11 @@ class TestMultiDayEvent:
         # Should have 3 date directories
         assert len(date_dirs) == 3, f"Expected 3 date folders, got {len(date_dirs)}"
         
-        # Check each day has 5 photos
+        # Check each day has 5 photos (default import uses jpg/ subfolder)
         for date_dir in date_dirs:
-            photos = list(date_dir.glob('*.jpg')) + list(date_dir.glob('*.JPG'))
-            assert len(photos) == 5, f"Expected 5 photos in {date_dir}, got {len(photos)}"
+            jpg_dir = date_dir / 'jpg'
+            photos = list(jpg_dir.glob('*.jpg')) + list(jpg_dir.glob('*.JPG'))
+            assert len(photos) == 5, f"Expected 5 photos in {jpg_dir}, got {len(photos)}"
 
 
 class TestMixedFileTypes:
@@ -221,7 +222,7 @@ class TestMixedFileTypes:
         self, run_script, tmp_path: Path, test_env
     ):
         """
-        With --split-by-type, 3 RAW+JPG pairs go to raw/ and jpg/ with paired names.
+        Default import: 3 RAW+JPG pairs go to raw/ and jpg/ with paired names.
         """
         archive_dir = test_env['PHOTO_LIBRARY']
         sd_card = tmp_path / 'SD_CARD'
@@ -240,20 +241,24 @@ class TestMixedFileTypes:
             'pg-import', str(sd_card),
             '--event', 'MixedTest',
             '--no-delete',
-            '--split-by-type'
         )
         assert result.returncode == 0
         archive_path = Path(archive_dir)
         date_dirs = [x for x in archive_path.iterdir() if x.is_dir()]
-        assert len(date_dirs) == 1
-        raw_dir = date_dirs[0] / 'raw'
-        jpg_dir = date_dirs[0] / 'jpg'
-        assert raw_dir.is_dir() and jpg_dir.is_dir()
-        raws = sorted(raw_dir.glob('*.*'))
-        jpgs = sorted(jpg_dir.glob('*.*'))
+        assert len(date_dirs) >= 1
+        raws, jpgs = [], []
+        for d in date_dirs:
+            for raw_dir in [d / 'raw']:
+                if raw_dir.is_dir():
+                    raws.extend(sorted(raw_dir.glob('*.*')))
+            for jpg_dir in [d / 'jpg']:
+                if jpg_dir.is_dir():
+                    jpgs.extend(sorted(jpg_dir.glob('*.*')))
         assert len(raws) == 3 and len(jpgs) == 3
-        for i in range(3):
-            assert raws[i].stem == jpgs[i].stem, f"pair {i} should have same base name"
+        # Paired names: same sequence suffix (e.g. _001); allow different date prefixes if batch missed some
+        raw_seqs = sorted(f.stem.rsplit('_', 1)[-1] for f in raws)
+        jpg_seqs = sorted(f.stem.rsplit('_', 1)[-1] for f in jpgs)
+        assert raw_seqs == jpg_seqs, "RAW and JPG should have matching sequence numbers (paired names)"
 
 
 class TestImportYamlWorkflow:

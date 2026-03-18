@@ -24,7 +24,7 @@ DRY_RUN=false
 NO_DELETE=false
 VERBOSE=false
 TRIP_MODE=false
-SPLIT_BY_TYPE=false
+# SPLIT_BY_TYPE set by lib/config.sh (.env); CLI overrides below
 
 # Track what was set via CLI (for priority handling)
 CLI_EVENT=""
@@ -53,7 +53,8 @@ OPTIONS:
     -o, --output <dir>    Archive/output directory (overrides PHOTO_LIBRARY)
     -n, --dry-run         Preview changes without modifying files
     --no-delete           Don't ask to delete source files after import
-    --split-by-type       Put RAW and JPG in raw/ and jpg/ subfolders with paired names
+    --split-by-type       RAW in raw/, JPG in jpg/ with paired names (default)
+    --no-split-by-type    Flat layout: all files in the date folder
     -t, --trip            Trip mode: skip event/location prompts, date-only names when no event
     -v, --verbose         Show detailed output
     -h, --help            Show this help message
@@ -62,7 +63,7 @@ EXAMPLES:
     pg-import /Volumes/EOS_DIGITAL --event "Endurotraining" --location "Stadtoldendorf"
     pg-import /Volumes/EOS_DIGITAL    # Uses .import.yaml or prompts
     pg-import /Volumes/CARD --trip    # Import without event/location prompts (date-only names)
-    pg-import /Volumes/CARD --split-by-type --event "Event"   # RAW and JPG in raw/ and jpg/
+    pg-import /Volumes/CARD --no-split-by-type --event "E"     # Flat layout in date folder
     pg-import ./photos --dry-run      # Preview import
 
 CONFIGURATION:
@@ -108,6 +109,10 @@ parse_args() {
                 ;;
             --split-by-type)
                 SPLIT_BY_TYPE=true
+                shift
+                ;;
+            --no-split-by-type)
+                SPLIT_BY_TYPE=false
                 shift
                 ;;
             -t|--trip)
@@ -229,20 +234,20 @@ load_import_config() {
 # File Processing
 # =============================================================================
 
-# Get EXIF date from file using Python helper
+# Get EXIF date from a single file (used as fallback when batch returns empty)
 get_exif_date() {
     local file="$1"
-    
-    run_python_with_lib "
-from exif_utils import ExifTool
-
-exif = ExifTool()
-dt = exif.read_date('$file')
-if dt:
-    print(dt.strftime('%Y%m%d'))
-else:
-    print('')
-" 2>/dev/null || echo ""
+    local b64
+    b64=$(printf '%s' "$file" | base64)
+    PG_FILE_B64="$b64" run_python_with_lib '
+import os, base64
+path = base64.b64decode(os.environ.get("PG_FILE_B64", "")).decode("utf-8", errors="replace")
+if path:
+    from exif_utils import ExifTool
+    exif = ExifTool()
+    dt = exif.read_date(path)
+    print(dt.strftime("%Y%m%d") if dt else "")
+' 2>/dev/null || echo ""
 }
 
 # Get camera model from file
@@ -337,13 +342,48 @@ create_import_plan() {
     trap "map_cleanup '$date_sequences'" RETURN
     
     log_step "Analyzing files..."
-    
+    # Batch-read EXIF dates (chunked exiftool calls; paths via file to avoid pipe issues)
+    local pathlist_file dates_str
+    pathlist_file=$(mktemp)
+    # shellcheck disable=SC2064
+    trap "map_cleanup '$date_sequences'; rm -f '$pathlist_file'" RETURN
+    printf '%s\n' "${files[@]}" > "$pathlist_file"
+    dates_str=$(PG_PATHLIST="$pathlist_file" run_python_with_lib '
+import os, sys
+pathlist = os.environ.get("PG_PATHLIST", "")
+if not pathlist or not os.path.isfile(pathlist):
+    exit(0)
+with open(pathlist) as f:
+    paths = [line.strip() for line in f if line.strip()]
+if not paths:
+    exit(0)
+def progress(current, total):
+    pct = (current * 100) // total if total else 0
+    bar = 30
+    filled = (current * bar) // total if total else 0
+    line = "\r  [%s%s] %d/%d (%d%%)" % ("#" * filled, " " * (bar - filled), current, total, pct)
+    print(line, end="", file=sys.stderr)
+    sys.stderr.flush()
+from exif_utils import ExifTool
+exif = ExifTool()
+dates = exif.read_dates_batch(paths, progress_callback=progress)
+print(file=sys.stderr)
+for d in dates:
+    print(d)
+') || true
+    local dates_arr=()
+    while IFS= read -r line; do
+        dates_arr+=("$line")
+    done <<< "${dates_str:-}"
+    # If batch failed or returned wrong count, fall back to empty so we use stat fallback
+    [[ ${#dates_arr[@]} -ne $total ]] && dates_arr=()
+
     if [[ "$SPLIT_BY_TYPE" == "true" ]]; then
         # Group by (date, base_name); one sequence per shot; raw/ and jpg/ subfolders
         local sortfile
         sortfile=$(mktemp)
         # shellcheck disable=SC2064
-        trap "map_cleanup '$date_sequences'; rm -f '$sortfile'" RETURN
+        trap "map_cleanup '$date_sequences'; rm -f '$pathlist_file' '$sortfile'" RETURN
         local sep=$'\x01'
         local i=0
         for file in "${files[@]}"; do
@@ -352,12 +392,16 @@ create_import_plan() {
                 log_progress "$i" "$total" "Analyzing"
             fi
             local date
-            date=$(get_exif_date "$file")
-            if [[ -z "$date" ]]; then
-                if [[ "$(uname)" == "Darwin" ]]; then
-                    date=$(stat -f "%Sm" -t "%Y%m%d" "$file")
-                else
-                    date=$(date -r "$file" +%Y%m%d)
+            if [[ -n "${dates_arr[i-1]:-}" ]]; then
+                date="${dates_arr[i-1]}"
+            else
+                date=$(get_exif_date "$file")
+                if [[ -z "$date" ]]; then
+                    if [[ "$(uname)" == "Darwin" ]]; then
+                        date=$(stat -f "%Sm" -t "%Y%m%d" "$file")
+                    else
+                        date=$(date -r "$file" +%Y%m%d)
+                    fi
                 fi
             fi
             local base
@@ -401,12 +445,16 @@ create_import_plan() {
                 log_progress "$i" "$total" "Analyzing"
             fi
             local date
-            date=$(get_exif_date "$file")
-            if [[ -z "$date" ]]; then
-                if [[ "$(uname)" == "Darwin" ]]; then
-                    date=$(stat -f "%Sm" -t "%Y%m%d" "$file")
-                else
-                    date=$(date -r "$file" +%Y%m%d)
+            if [[ -n "${dates_arr[i-1]:-}" ]]; then
+                date="${dates_arr[i-1]}"
+            else
+                date=$(get_exif_date "$file")
+                if [[ -z "$date" ]]; then
+                    if [[ "$(uname)" == "Darwin" ]]; then
+                        date=$(stat -f "%Sm" -t "%Y%m%d" "$file")
+                    else
+                        date=$(date -r "$file" +%Y%m%d)
+                    fi
                 fi
             fi
             local seq

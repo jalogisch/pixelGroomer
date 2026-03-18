@@ -40,7 +40,8 @@ pg-import <source> [optionen]
 | `--output <dir>` | `-o` | Ziel-Archiv (überschreibt PHOTO_LIBRARY und .import.yaml) |
 | `--dry-run` | `-n` | Vorschau ohne Änderungen |
 | `--no-delete` | | Quelle nicht löschen (auch nicht fragen) |
-| `--split-by-type` | | RAW in `raw/`, JPG in `jpg/` mit gepaarten Namen |
+| `--split-by-type` | | RAW in `raw/`, JPG in `jpg/` mit gepaarten Namen (Standard) |
+| `--no-split-by-type` | | Flache Struktur: alle Dateien im Datumsordner |
 | `--trip` | `-t` | Trip-Modus: keine Abfrage für Event/Ort; Dateinamen nur aus Datum+Sequenz, wenn kein Event gesetzt |
 | `--verbose` | `-v` | Detaillierte Ausgabe |
 | `--help` | `-h` | Hilfe anzeigen |
@@ -69,8 +70,8 @@ pg-import /Volumes/SD --output /Volumes/Archive/2026 --event "Test"
 # Trip-Import (keine Abfragen; dateinamen nur aus Datum, wenn kein Event)
 pg-import /Volumes/CARD --trip
 
-# RAW und JPG in raw/ und jpg/ mit gepaarten Namen
-pg-import /Volumes/CARD --split-by-type --event "Endurotraining"
+# Flache Struktur (Standard-Split aus)
+pg-import /Volumes/CARD --no-split-by-type --event "Endurotraining"
 
 # Vorschau
 pg-import /Volumes/SD --dry-run --verbose

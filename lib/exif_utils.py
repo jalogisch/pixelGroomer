@@ -8,7 +8,7 @@ import subprocess
 import json
 import os
 import sys
-from typing import Optional, Dict, List, Any, Union
+from typing import Optional, Dict, List, Any, Union, Callable
 from datetime import datetime
 from pathlib import Path
 
@@ -112,7 +112,93 @@ class ExifTool:
         """Get camera model from file"""
         metadata = self.read(filepath)
         return metadata.get('EXIF:Model') or metadata.get('EXIF:Make')
-    
+
+    # Tags needed only for date extraction (used by read_dates_batch).
+    # Include both grouped (-G) and ungrouped names for compatibility across file types.
+    _DATE_TAGS = [
+        'EXIF:DateTimeOriginal', 'EXIF:CreateDate', 'File:FileModifyDate',
+        'DateTimeOriginal', 'CreateDate', 'ModifyDate',
+    ]
+
+    # Chunk size for batch exiftool calls (avoids ARG_MAX and can be faster)
+    _BATCH_CHUNK_SIZE = 250
+
+    def read_dates_batch(
+        self,
+        filepaths: List[Union[str, Path]],
+        progress_callback: Optional[Callable[[int, int], None]] = None,
+    ) -> List[str]:
+        """
+        Extract YYYYMMDD date from many files via chunked exiftool calls.
+        Returns a list of date strings in the same order as filepaths;
+        use '' when no date could be read.
+        progress_callback(current, total) is called after each chunk if given.
+        """
+        if not filepaths:
+            return []
+        paths = [str(p) for p in filepaths]
+        path_to_date: Dict[str, str] = {}
+        chunk_size = self._BATCH_CHUNK_SIZE
+        total = len(paths)
+        if progress_callback is not None:
+            progress_callback(0, total)
+        for i in range(0, total, chunk_size):
+            chunk = paths[i : i + chunk_size]
+            args = (
+                ['-json', '-G']
+                + [f'-{t}' for t in self._DATE_TAGS]
+                + chunk
+            )
+            try:
+                result = subprocess.run(
+                    [self.exiftool_path] + args,
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                )
+                if result.returncode != 0:
+                    for p in chunk:
+                        path_to_date.setdefault(p, '')
+                    continue
+                data = json.loads(result.stdout)
+            except (json.JSONDecodeError, TypeError):
+                for p in chunk:
+                    path_to_date.setdefault(p, '')
+                continue
+            for item in data:
+                src = item.get('SourceFile', '')
+                date_val = ''
+                for field in self._DATE_TAGS:
+                    date_str = item.get(field)
+                    if date_str:
+                        try:
+                            dt = datetime.strptime(
+                                date_str[:19], '%Y:%m:%d %H:%M:%S'
+                            )
+                            date_val = dt.strftime('%Y%m%d')
+                            break
+                        except (ValueError, TypeError):
+                            continue
+                if src:
+                    path_to_date[src] = date_val
+                    try:
+                        path_to_date[str(Path(src).resolve())] = date_val
+                    except (OSError, RuntimeError):
+                        pass
+            if progress_callback is not None:
+                progress_callback(min(i + len(chunk), total), total)
+        # Preserve input order; try exact path then resolved path
+        result = []
+        for p in paths:
+            d = path_to_date.get(p, '')
+            if not d:
+                try:
+                    d = path_to_date.get(str(Path(p).resolve()), '')
+                except (OSError, RuntimeError):
+                    pass
+            result.append(d)
+        return result
+
     def write(self, filepath: Union[str, Path], **kwargs) -> bool:
         """
         Write metadata to a file

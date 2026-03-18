@@ -4,7 +4,7 @@
 #
 # Use after a holiday: no event or location, only author/copyright/credit from
 # the card's .import.yaml or .env. One folder per day by EXIF date.
-# RAW and JPG are placed in raw/ and jpg/ subfolders with paired names (--split-by-type).
+# RAW and JPG go to raw/ and jpg/ by default (pg-import SPLIT_BY_TYPE).
 
 set -euo pipefail
 
@@ -87,7 +87,7 @@ main() {
         exit 1
     fi
 
-    local args=("$source" --trip --split-by-type)
+    local args=("$source" --trip)
     [[ "$no_delete" == true ]] && args+=(--no-delete)
     [[ -n "$output_dir" ]] && args+=(--output "$output_dir")
     [[ "$dry_run" == true ]] && args+=(--dry-run)

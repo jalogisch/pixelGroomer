@@ -178,7 +178,7 @@ class TestImportFolderStructureMatrix:
         result = run_script(
             'pg-import', str(sd_card),
             '--event', 'StructureTest',
-            '--no-delete',
+            '--no-delete', '--no-split-by-type',
             env=env
         )
         

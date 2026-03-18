@@ -268,8 +268,11 @@ Optionen:
   -o, --output <dir>    Ziel-Archiv
   -n, --dry-run         Vorschau ohne Änderungen
   --no-delete           Quelle nicht löschen
+  --no-split-by-type    Flache Struktur im Datumsordner
   -v, --verbose         Detaillierte Ausgabe
 ```
+
+**Import-Layout:** Standard ist RAW in `raw/`, JPG in `jpg/` (`SPLIT_BY_TYPE=true` in `.env`). Mit `--no-split-by-type` oder `SPLIT_BY_TYPE=false` liegen alle Dateien flach im Datumsordner.
 
 **Beispiele:**
 
